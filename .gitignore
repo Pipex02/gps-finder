@@ -17,3 +17,7 @@ Thumbs.db
 /api-rest/node_modules/
 /api-rest/package-lock.json
 /api-rest/.env
+/web-server/logs/
+/web-server/temp/
+/web-server/.nginx.exe
+/web-server/.hgtags
