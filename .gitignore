@@ -14,3 +14,6 @@ Thumbs.db
 *.log
 /api-rest/create-db.js
 /api-rest/create-table.js
+/api-rest/node_modules/
+/api-rest/package-lock.json
+/api-rest/.env
