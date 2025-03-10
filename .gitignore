@@ -21,3 +21,5 @@ Thumbs.db
 /web-server/temp/
 /web-server/.nginx.exe
 /web-server/.hgtags
+/sniffer-udp/.env
+/sniffer-udp/myenv/

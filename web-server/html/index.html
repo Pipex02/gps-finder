@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -10,25 +11,53 @@
 
     <!-- Enlace al archivo de estilos externo -->
     <link rel="stylesheet" href="styles.css">
+
+    <!-- CSS de Leaflet -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+
+    <style>
+        #map {
+            height: 400px;
+            /* Ajusta la altura del mapa */
+            width: 100%;
+            margin-top: 20px;
+            border: 2px solid black;
+        }
+    </style>
 </head>
+
 <body>
     <!-- Imagen decorativa arriba del título -->
     <img src="satelite.png" alt="Ícono GPS" class="imagen">
-    
+
     <h1>Datos de Ubicación</h1>
     <div class="datos">
         <p><strong>Latitud:</strong> <span id="latitud">Obteniendo...</span></p>
         <p><strong>Longitud:</strong> <span id="longitud">Obteniendo...</span></p>
         <p><strong>Estampa de Tiempo:</strong> <span id="timestamp">Obteniendo...</span></p>
     </div>
-    
-    <!-- GIF animado -->
-    <img src="Gqgs.gif" alt="GIF animado" class="gif-animado">
 
+    <!-- Contenedor del mapa -->
+    <div id="map"></div>
+
+    <!-- GIF animado -->
+    <img src="GqgS.gif" alt="GIF animado" class="gif-animado">
+
+    <!-- Scripts -->
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
     <script>
+        var map = L.map('map').setView([0, 0], 2); // Inicia en el centro del mundo
+
+        // Capa base de OpenStreetMap
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; OpenStreetMap contributors'
+        }).addTo(map);
+
+        var marker; // Variable global para el marcador
+
         async function obtenerCoordenadasDesdeAPI() {
             try {
-                const respuesta = await fetch('/api/coordenadas');  
+                const respuesta = await fetch('/api/coordenadas');
                 if (!respuesta.ok) {
                     throw new Error('Error al obtener datos de la API');
                 }
@@ -37,15 +66,37 @@
                 if (datos.latitud && datos.longitud && datos.timestamp) {
                     document.getElementById("latitud").innerText = datos.latitud;
                     document.getElementById("longitud").innerText = datos.longitud;
-                    document.getElementById("timestamp").innerText = new Date(datos.timestamp).toLocaleString();
+                    function formatearTimestamp(timestamp) {
+                        return timestamp.replace("T", " ").split(".")[0];
+                    }
+
+                    document.getElementById("timestamp").innerText = formatearTimestamp(datos.timestamp);
+
+
+                    var lat = parseFloat(datos.latitud);
+                    var lon = parseFloat(datos.longitud);
+
+                    // Si ya existe un marcador, se actualiza la posición
+                    if (marker) {
+                        marker.setLatLng([lat, lon]);
+                    } else {
+                        // Si no existe, se crea uno nuevo
+                        marker = L.marker([lat, lon]).addTo(map)
+                            .bindPopup("Última ubicación registrada").openPopup();
+                    }
+
+                    // Centrar el mapa en la nueva ubicación
+                    map.setView([lat, lon], 18);
                 }
             } catch (error) {
                 console.error('❌ Error al obtener datos:', error);
             }
         }
 
+        // Obtener ubicación al cargar la página y actualizar cada 5 segundos
         obtenerCoordenadasDesdeAPI();
-        setInterval(obtenerCoordenadasDesdeAPI, 5000);  // Se actualiza cada 5 segundos
+        setInterval(obtenerCoordenadasDesdeAPI, 5000);
     </script>
 </body>
+
 </html>
