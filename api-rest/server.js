@@ -1,3 +1,4 @@
+require('dotenv').config();
 const express = require("express");
 const mysql = require("mysql2");
 const cors = require("cors");
@@ -10,10 +11,10 @@ app.use(cors());
 
 // Configuración de conexión a MySQL en RDS
 const db = mysql.createConnection({
-    host: "xxxxxx",
-    user: "xxxxxx",
-    password: "xxxxxx",
-    database: "xxxxxx"
+    host: process.env.DB_HOST,
+    user: process.env.DB_USER,
+    password: process.env.DB_PASSWORD,
+    database: process.env.DB_NAME
 });
 
 // Conectar a la base de datos

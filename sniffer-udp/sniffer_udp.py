@@ -1,14 +1,17 @@
 import socket
 import pymysql
+import os
+from dotenv import load_dotenv
 
+load_dotenv('/home/ubuntu/gps-finder/sniffer-udp/.env')
 # Configuración de conexión a la base de datos
 def conectar_bd():
     try:
         conexion = pymysql.connect(
-            host="localhost",
-            user="xxxxxx",
-            password="xxxxxx",  # Cambia por tu contraseña
-            database="xxxxxx"
+            host=os.getenv("DB_HOST"),
+            user=os.getenv("DB_USER"),
+            password=os.getenv("DB_PASSWORD"),  # Cambia por tu contraseña
+            database=os.getenv("DB_NAME")
         )
         return conexion
     except pymysql.MySQLError as e:
