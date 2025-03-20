@@ -1,0 +1,45 @@
+name: Deploy to EC2
+
+on:
+  push:
+    branches:
+      - main  # Ejecutar cuando haya un push en main
+
+  pull_request:
+    branches:
+      - main  # Ejecutar cuando haya un pull request a main
+
+jobs:
+  deploy:
+    runs-on: self-hosted  # Usa el runner autoalojado en EC2
+
+    steps:
+      - name: 📥 Checkout del código
+        uses: actions/checkout@v3
+
+      - name: 🚀 Ejecutar despliegue en EC2
+        run: |
+          echo "📂 Moviendo archivos del frontend a /var/www/gps-finder/html/..."
+          sudo mkdir -p /var/www/gps-finder/html/
+          sudo rsync -av /home/ubuntu/gps-finder/web-server/html/ /var/www/gps-finder/html/
+          echo "✅ Archivos movidos correctamente."
+
+          echo "🔐 Asignando permisos a /var/www/gps-finder/html/..."
+          sudo chown -R www-data:www-data /var/www/gps-finder/html
+          sudo chmod -R 755 /var/www/gps-finder/html
+          echo "✅ Permisos configurados correctamente."
+
+          echo "📦 Instalando dependencias..."
+          cd /home/ubuntu/gps-finder/api-rest/
+          npm install
+            
+          cd /home/ubuntu/gps-finder/sniffer-udp/
+          source /home/ubuntu/gps-finder/sniffer-udp/myenv/bin/activate
+          pip3 install -r requirements.txt
+          deactivate
+          echo "✅ Dependencias instaladas correctamente."
+
+          echo "🔄 Reiniciando servicios..."
+          sudo systemctl restart api-rest
+          sudo systemctl restart sniffer-udp
+          echo "✅ Servicios reiniciados correctamente."
