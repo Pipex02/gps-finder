@@ -4,7 +4,7 @@ on:
   push:
     branches:
       - main  # Ejecutar cuando haya un push en main
-
+      
   pull_request:
     branches:
       - main  # Ejecutar cuando haya un pull request a main
@@ -16,6 +16,16 @@ jobs:
     steps:
       - name: 📥 Checkout del código
         uses: actions/checkout@v3
+
+      - name: 🔄 Actualizar código en la EC2
+        run: |
+          echo "📥 Haciendo pull del código en la EC2..."
+          cd /home/ubuntu/gps-finder
+          git fetch origin  # Obtiene la última información del repo
+          git checkout main  # Asegura que estamos en la rama correcta
+          git reset --hard origin/main  # Sincroniza con la versión remota
+          git pull origin main  # Trae los últimos cambios del repo
+          echo "✅ Código actualizado en la EC2."
 
       - name: 🚀 Ejecutar despliegue en EC2
         run: |
@@ -34,7 +44,7 @@ jobs:
           npm install
             
           cd /home/ubuntu/gps-finder/sniffer-udp/
-          source /home/ubuntu/gps-finder/sniffer-udp/myenv/bin/activate
+          source myenv/bin/activate
           pip3 install -r requirements.txt
           deactivate
           echo "✅ Dependencias instaladas correctamente."
