@@ -3,53 +3,229 @@ name: Deploy to EC2
 on:
   push:
     branches:
-      - main  # Ejecutar cuando haya un push en main
-      
+      - dev-an  # Rama para Angie-test
+      - dev-al  # Rama para Ally-test
+      - dev-ha  # Rama para Habid-test
+      - dev-fe  # Rama para Felipe-test
   pull_request:
     branches:
-      - main  # Ejecutar cuando haya un pull request a main
+      - main  # Despliegue en main tras merge de PR
 
 jobs:
-  deploy:
-    runs-on: self-hosted  # Usa el runner autoalojado en EC2
-
+  # Jobs para despliegues en ramas dev (test)
+  deploy-test-an:
+    runs-on: Angie-test
+    if: github.ref == 'refs/heads/dev-an'
     steps:
-      - name: 📥 Checkout del código
-        uses: actions/checkout@v3
+      - name: Checkout del código
+        uses: actions/checkout@v4
 
-      - name: 🔄 Actualizar código en la EC2
+      - name: Desplegar frontend
         run: |
-          echo "📥 Haciendo pull del código en la EC2..."
-          cd /home/ubuntu/gps-finder
-          git fetch origin  # Obtiene la última información del repo
-          git checkout main  # Asegura que estamos en la rama correcta
-          git reset --hard origin/main  # Sincroniza con la versión remota
-          git pull origin main  # Trae los últimos cambios del repo
-          echo "✅ Código actualizado en la EC2."
-
-      - name: 🚀 Ejecutar despliegue en EC2
-        run: |
-          echo "📂 Moviendo archivos del frontend a /var/www/gps-finder/html/..."
           sudo mkdir -p /var/www/gps-finder/html/
-          sudo rsync -av /home/ubuntu/gps-finder/web-server/html/ /var/www/gps-finder/html/
-          echo "✅ Archivos movidos correctamente."
-
-          echo "🔐 Asignando permisos a /var/www/gps-finder/html/..."
+          sudo rsync -av ~/gps-finder/web-server/html/ /var/www/gps-finder/html/
           sudo chown -R www-data:www-data /var/www/gps-finder/html
           sudo chmod -R 755 /var/www/gps-finder/html
-          echo "✅ Permisos configurados correctamente."
+          echo "✅ Frontend desplegado."
 
-          echo "📦 Instalando dependencias..."
-          cd /home/ubuntu/gps-finder/api-rest/
+      - name: Instalar dependencias
+        run: |
+          cd ~/gps-finder/api-rest/
           npm install
-            
-          cd /home/ubuntu/gps-finder/sniffer-udp/
-          source myenv/bin/activate
-          pip3 install -r requirements.txt
-          deactivate
-          echo "✅ Dependencias instaladas correctamente."
+          echo "✅ Dependencias instaladas."
 
-          echo "🔄 Reiniciando servicios..."
+      - name: Reiniciar servicios
+        run: |
           sudo systemctl restart api-rest
           sudo systemctl restart sniffer-udp
-          echo "✅ Servicios reiniciados correctamente."
+          echo "✅ Servicios reiniciados."
+
+  deploy-test-al:
+    runs-on: Ally-test
+    if: github.ref == 'refs/heads/dev-al'
+    steps:
+      - name: Checkout del código
+        uses: actions/checkout@v4
+
+      - name: Desplegar frontend
+        run: |
+          sudo mkdir -p /var/www/gps-finder/html/
+          sudo rsync -av ~/gps-finder/web-server/html/ /var/www/gps-finder/html/
+          sudo chown -R www-data:www-data /var/www/gps-finder/html
+          sudo chmod -R 755 /var/www/gps-finder/html
+          echo "✅ Frontend desplegado."
+
+      - name: Instalar dependencias
+        run: |
+          cd ~/gps-finder/api-rest/
+          npm install
+          echo "✅ Dependencias instaladas."
+
+      - name: Reiniciar servicios
+        run: |
+          sudo systemctl restart api-rest
+          sudo systemctl restart sniffer-udp
+          echo "✅ Servicios reiniciados."
+
+  deploy-test-ha:
+    runs-on: Habid-test
+    if: github.ref == 'refs/heads/dev-ha'
+    steps:
+      - name: Checkout del código
+        uses: actions/checkout@v4
+
+      - name: Desplegar frontend
+        run: |
+          sudo mkdir -p /var/www/gps-finder/html/
+          sudo rsync -av ~/gps-finder/web-server/html/ /var/www/gps-finder/html/
+          sudo chown -R www-data:www-data /var/www/gps-finder/html
+          sudo chmod -R 755 /var/www/gps-finder/html
+          echo "✅ Frontend desplegado."
+
+      - name: Instalar dependencias
+        run: |
+          cd ~/gps-finder/api-rest/
+          npm install
+          echo "✅ Dependencias instaladas."
+
+      - name: Reiniciar servicios
+        run: |
+          sudo systemctl restart api-rest
+          sudo systemctl restart sniffer-udp
+          echo "✅ Servicios reiniciados."
+
+  deploy-test-fe:
+    runs-on: Felipe-test
+    if: github.ref == 'refs/heads/dev-fe'
+    steps:
+      - name: Checkout del código
+        uses: actions/checkout@v4
+
+      - name: Desplegar frontend
+        run: |
+          sudo mkdir -p /var/www/gps-finder/html/
+          sudo rsync -av ~/gps-finder/web-server/html/ /var/www/gps-finder/html/
+          sudo chown -R www-data:www-data /var/www/gps-finder/html
+          sudo chmod -R 755 /var/www/gps-finder/html
+          echo "✅ Frontend desplegado."
+
+      - name: Instalar dependencias
+        run: |
+          cd ~/gps-finder/api-rest/
+          npm install
+          echo "✅ Dependencias instaladas."
+
+      - name: Reiniciar servicios
+        run: |
+          sudo systemctl restart api-rest
+          sudo systemctl restart sniffer-udp
+          echo "✅ Servicios reiniciados."
+
+  # Jobs para despliegues en main (tras PR)
+  deploy-main-angie:
+    runs-on: Angie
+    if: github.event_name == 'pull_request' && github.event.pull_request.merged == true && github.event.pull_request.base.ref == 'main'
+    steps:
+      - name: Checkout del código
+        uses: actions/checkout@v4
+
+      - name: Desplegar frontend
+        run: |
+          sudo mkdir -p /var/www/gps-finder/html/
+          sudo rsync -av ~/gps-finder/web-server/html/ /var/www/gps-finder/html/
+          sudo chown -R www-data:www-data /var/www/gps-finder/html
+          sudo chmod -R 755 /var/www/gps-finder/html
+          echo "✅ Frontend desplegado."
+
+      - name: Instalar dependencias
+        run: |
+          cd ~/gps-finder/api-rest/
+          npm install
+          echo "✅ Dependencias instaladas."
+
+      - name: Reiniciar servicios
+        run: |
+          sudo systemctl restart api-rest
+          sudo systemctl restart sniffer-udp
+          echo "✅ Servicios reiniciados."
+
+  deploy-main-ally:
+    runs-on: Ally
+    if: github.event_name == 'pull_request' && github.event.pull_request.merged == true && github.event.pull_request.base.ref == 'main'
+    steps:
+      - name: Checkout del código
+        uses: actions/checkout@v4
+
+      - name: Desplegar frontend
+        run: |
+          sudo mkdir -p /var/www/gps-finder/html/
+          sudo rsync -av ~/gps-finder/web-server/html/ /var/www/gps-finder/html/
+          sudo chown -R www-data:www-data /var/www/gps-finder/html
+          sudo chmod -R 755 /var/www/gps-finder/html
+          echo "✅ Frontend desplegado."
+
+      - name: Instalar dependencias
+        run: |
+          cd ~/gps-finder/api-rest/
+          npm install
+          echo "✅ Dependencias instaladas."
+
+      - name: Reiniciar servicios
+        run: |
+          sudo systemctl restart api-rest
+          sudo systemctl restart sniffer-udp
+          echo "✅ Servicios reiniciados."
+
+  deploy-main-habid:
+    runs-on: Habid
+    if: github.event_name == 'pull_request' && github.event.pull_request.merged == true && github.event.pull_request.base.ref == 'main'
+    steps:
+      - name: Checkout del código
+        uses: actions/checkout@v4
+
+      - name: Desplegar frontend
+        run: |
+          sudo mkdir -p /var/www/gps-finder/html/
+          sudo rsync -av ~/gps-finder/web-server/html/ /var/www/gps-finder/html/
+          sudo chown -R www-data:www-data /var/www/gps-finder/html
+          sudo chmod -R 755 /var/www/gps-finder/html
+          echo "✅ Frontend desplegado."
+
+      - name: Instalar dependencias
+        run: |
+          cd ~/gps-finder/api-rest/
+          npm install
+          echo "✅ Dependencias instaladas."
+
+      - name: Reiniciar servicios
+        run: |
+          sudo systemctl restart api-rest
+          sudo systemctl restart sniffer-udp
+          echo "✅ Servicios reiniciados."
+
+  deploy-main-felipe:
+    runs-on: Felipe
+    if: github.event_name == 'pull_request' && github.event.pull_request.merged == true && github.event.pull_request.base.ref == 'main'
+    steps:
+      - name: Checkout del código
+        uses: actions/checkout@v4
+
+      - name: Desplegar frontend
+        run: |
+          sudo mkdir -p /var/www/gps-finder/html/
+          sudo rsync -av ~/gps-finder/web-server/html/ /var/www/gps-finder/html/
+          sudo chown -R www-data:www-data /var/www/gps-finder/html
+          sudo chmod -R 755 /var/www/gps-finder/html
+          echo "✅ Frontend desplegado."
+
+      - name: Instalar dependencias
+        run: |
+          cd ~/gps-finder/api-rest/
+          npm install
+          echo "✅ Dependencias instaladas."
+
+      - name: Reiniciar servicios
+        run: |
+          sudo systemctl restart api-rest
+          sudo systemctl restart sniffer-udp
+          echo "✅ Servicios reiniciados."
