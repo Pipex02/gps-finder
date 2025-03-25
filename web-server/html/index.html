@@ -1,47 +1,47 @@
 <!DOCTYPE html>
 <html lang="es">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Datos de Ubicación</title>
-
-    <!-- Enlace a Google Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
-
-    <!-- Enlace al archivo de estilos externo -->
-    <link rel="stylesheet" href="styles.css">
-
-    <!-- CSS de Leaflet -->
+    <title>Geo Finder</title>
+    <link rel="stylesheet" href="styles1.css">
     <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
-
-    <style>
-        #map {
-            height: 400px;
-            width: 100%;
-            margin-top: 20px;
-            border: 2px solid black;
-        }
-    </style>
 </head>
-
 <body>
+    <header class="title-container">
+        <img src="gato.webp" alt="Gato" class="title-image">
+        <h1 class="title">Geo Finder</h1>
+    </header>
+    <div class="content">
+        <div id="map-container">
+            <div id="map"></div>
+        </div>
+        <div class="info">
+            
+            <div class="card location-card">
+                <img src="AstronautaPixelArt-2.webp" alt="Astronauta" class="astronaut">
+                <div class="head">Datos de Ubicación</div>
+                <div class="card-content">
+                    <p><strong>Latitud:</strong> <span id="latitud">Obteniendo...</span></p>
+                    <p><strong>Longitud:</strong> <span id="longitud">Obteniendo...</span></p>
+                    <p><strong>Estampa de Tiempo:</strong> <span id="timestamp">Obteniendo...</span></p>
+                </div>
+            </div>
 
-    <img src="satelite.png" alt="Ícono GPS" class="imagen">
-    
-    <h1>Datos de Ubicación</h1>
-    <div class="datos">
-        <p><strong>Latitud:</strong> <span id="latitud">Obteniendo...</span></p>
-        <p><strong>Longitud:</strong> <span id="longitud">Obteniendo...</span></p>
-        <p><strong>Estampa de Tiempo:</strong> <span id="timestamp">Obteniendo...</span></p>
+           
+
+            <div class="card history-card">
+                <img src="alien.webp" alt="Alien" class="alien">
+                <div class="head">Históricos</div>
+                <div class="card-content">
+                    <p>Acá podrás consultar rutas en los días deseados</p>
+                    <a href="historicos.html" class="button">Consultar</a>
+                </div>
+            </div>
+        </div>
     </div>
 
-    <!-- Contenedor del mapa -->
-    <div id="map"></div>
-
-    <img src="GqgS.gif" alt="GIF animado" class="gif-animado">
-
-    <!-- Scripts -->
+    <!-- Scripts de Leaflet y API -->
     <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
     <script>
         var map = L.map('map').setView([0, 0], 2); // Mapa inicial
@@ -52,7 +52,7 @@
         }).addTo(map);
 
         var marker;  // Variable para el marcador
-        var route = [];  // Array que almacena la ruta recorrida
+        var route = [];  // Almacena la ruta recorrida
         var polyline = L.polyline([], {color: 'red', weight: 6}).addTo(map); // Línea de la ruta
 
         async function obtenerCoordenadasDesdeAPI() {
@@ -66,13 +66,13 @@
                 if (datos.latitud && datos.longitud && datos.timestamp) {
                     document.getElementById("latitud").innerText = datos.latitud;
                     document.getElementById("longitud").innerText = datos.longitud;
+                    
                     function formatearTimestamp(timestamp) {
                         return timestamp.replace("T", " ").split(".")[0];
                     }
 
                     document.getElementById("timestamp").innerText = formatearTimestamp(datos.timestamp);
-
-
+                    
                     var lat = parseFloat(datos.latitud);
                     var lon = parseFloat(datos.longitud);
 
@@ -102,6 +102,26 @@
         // Obtener ubicación al cargar y actualizar cada 5 segundos
         obtenerCoordenadasDesdeAPI();
         setInterval(obtenerCoordenadasDesdeAPI, 5000);
+    </script>  
+    <script>
+        // Generar muchas estrellas
+        for (let i = 0; i < 100; i++) {
+            let star = document.createElement('div');
+            star.className = 'star';
+            star.style.top = Math.random() * 100 + '%';
+            star.style.left = Math.random() * 100 + '%';
+            document.body.appendChild(star);
+        }
+
+        // Generar más meteoros
+        for (let i = 0; i < 30; i++) {
+            let meteor = document.createElement('div');
+            meteor.className = 'meteor';
+            meteor.style.top = Math.random() * 100 + '%';
+            meteor.style.left = Math.random() * 100 + '%';
+            meteor.style.animationDelay = Math.random() * 5 + 's';
+            document.body.appendChild(meteor);
+        }
     </script>
 </body>
 </html>
