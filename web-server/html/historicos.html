@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Consulta de Históricos</title>
+    <link rel="stylesheet" href="styles2.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+</head>
+<body>
+    <script>
+        // Generar muchas estrellas
+        for (let i = 0; i < 100; i++) {
+            let star = document.createElement('div');
+            star.className = 'star';
+            star.style.top = Math.random() * 100 + '%';
+            star.style.left = Math.random() * 100 + '%';
+            document.body.appendChild(star);
+        }
+
+        // Generar más meteoros
+        for (let i = 0; i < 30; i++) {
+            let meteor = document.createElement('div');
+            meteor.className = 'meteor';
+            meteor.style.top = Math.random() * 100 + '%';
+            meteor.style.left = Math.random() * 100 + '%';
+            meteor.style.animationDelay = Math.random() * 5 + 's';
+            document.body.appendChild(meteor);
+        }
+    </script>
+    <header class="title-container">
+        <img src="perrito.webp" alt="perrito" class="title-image">
+        <h1 class="title">Consulta de Históricos</h1>
+    </header>
+    <div class="content">
+        <div id="map-container">
+            <div id="map"></div>
+        </div>
+        <div class="info">
+            <section class="card datetime-card">
+                <h2>Fecha y hora de inicio:</h2>
+                <input type="datetime-local" id="startDateTime" onchange="actualizarRestricciones()">
+                <br><br>
+
+                <h2>Fecha y hora de fin:</h2>
+                <input type="datetime-local" id="endDateTime">
+                <br><br>
+
+                <div class="button-container">
+                    <button class="button" onclick="consultar()">Consultar</button>
+                    <a href="index.html" id="back-button" class="button">Regresar</a>
+                </div>
+            </section>
+        </div>
+    </div>
+
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+    <script>
+        // Inicializar el mapa
+        var map = L.map('map').setView([0, 0], 2);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© OpenStreetMap contributors'
+        }).addTo(map);
+
+        var marker;
+        var polyline = L.polyline([], {color: 'blue', weight: 5}).addTo(map);
+
+        // Configurar restricciones iniciales
+        const startDateTime = document.getElementById('startDateTime');
+        const endDateTime = document.getElementById('endDateTime');
+
+        // Fecha mínima: 25 de marzo de 2025 a las 10:00:00 (hora de Colombia, UTC-5)
+        const minDate = new Date('2025-03-25T10:00:00-05:00'); // Hora de Colombia
+        startDateTime.min = minDate.toISOString().slice(0, 16); // Formato para datetime-local: "2025-03-25T10:00"
+        startDateTime.value = minDate.toISOString().slice(0, 16); // Valor inicial
+
+        // Configurar la fecha de fin para que no sea anterior a la de inicio
+        endDateTime.min = startDateTime.value;
+
+        // Función para actualizar restricciones dinámicamente
+        function actualizarRestricciones() {
+            const startValue = startDateTime.value;
+            if (startValue) {
+                endDateTime.min = startValue; // La fecha de fin no puede ser anterior a la de inicio
+                if (endDateTime.value && endDateTime.value < startValue) {
+                    endDateTime.value = startValue; // Ajustar si ya había un valor
+                }
+            }
+        }
+
+        // Función para consultar la API
+        function consultar() {
+            let startInput = startDateTime.value;
+            let endInput = endDateTime.value;
+
+            // Validar que ambas fechas estén seleccionadas
+            if (!startInput || !endInput) {
+                alert("Selecciona ambas fechas y horas.");
+                return;
+            }
+
+            // Validar que la fecha de fin sea posterior a la de inicio
+            const startDate = new Date(startInput);
+            const endDate = new Date(endInput);
+            if (endDate <= startDate) {
+                alert("La fecha y hora de fin deben ser posteriores a la de inicio.");
+                return;
+            }
+
+            // Convertir al formato "YYYY-MM-DD HH:MM:SS" para la API
+            const startFormatted = startInput.replace('T', ' ') + ':00';
+            const endFormatted = endInput.replace('T', ' ') + ':00';
+
+            console.log('Consultando API con rango:', startFormatted, 'a', endFormatted);
+
+            // Hacer fetch a la API con los parámetros inicio y fin
+            fetch(`/api/historicos?inicio=${encodeURIComponent(startFormatted)}&fin=${encodeURIComponent(endFormatted)}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.length === 0) {
+                        alert("No hay datos en este rango de tiempo.");
+                        return;
+                    }
+
+                    let route = data.map(coord => [parseFloat(coord.latitud), parseFloat(coord.longitud)]);
+                    polyline.setLatLngs(route);
+
+                    if (marker) {
+                        marker.setLatLng(route[route.length - 1]);
+                    } else {
+                        marker = L.marker(route[route.length - 1]).addTo(map)
+                            .bindPopup("Última posición registrada").openPopup();
+                    }
+
+                    map.fitBounds(polyline.getBounds());
+                })
+                .catch(error => console.error("Error al obtener datos históricos:", error));
+        }
+    </script>
+</body>
+</html>

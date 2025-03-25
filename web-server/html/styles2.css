@@ -1,0 +1,186 @@
+@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+
+body {
+    background: linear-gradient(to bottom, #000428, #004e92);
+    margin: 0;
+    overflow: hidden;
+    position: relative;
+    font-family: 'Press Start 2P', cursive;
+    text-align: center;
+    height: 100vh;
+}
+
+header {
+    height: 15vh;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 2vh;
+}
+
+.title-image {
+    margin: 10px;
+    height: 90%;
+} 
+
+h1 {
+    font-size: 3em;
+    font-weight: bold;
+    color: #00aaff;
+    text-shadow: 4px 4px 0 #000428, 8px 8px 0 #004e92;
+}
+
+.content {
+    width: 100vw;
+    height: 80vh;
+    display: flex;
+    flex-direction: row;
+}
+
+#map-container {
+    width: 67%;
+    height: 100%;
+    margin-left: 1vw;
+}
+
+#map {
+    width: 105%;
+    height: 100%;
+    border-radius: 2vw;
+    box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.2); /* Sombra ligera */
+}
+
+.info {
+    display: flex;
+    flex-direction: column; /* Organiza los elementos en una columna */
+    align-items: center; /* Centra los elementos */
+}
+
+.card {
+    font-family: 'Press Start 2P', cursive;
+    width: 20vw;
+    max-width: 25vw;
+    background: #002b5e;
+    border: 0.3vw solid #000428;
+    box-shadow: 0.5vw 0.5vw 0 #004e92;
+    padding: 2vh;
+    text-align: center;
+    color: #00aaff;
+    display: flex;
+    flex-direction: column;
+    align-items: right;
+    justify-content: right;
+}
+
+
+
+.datetime-card {
+    position: relative;
+    width: 20vw;
+    max-width: 25vw;
+    height: 100%;
+    background: #002b5e;
+    border: 0.3vw solid #000428;
+    box-shadow: 0.4vw 0.4vw 0 #004e92;
+    padding: 3vh;
+    text-align: center;
+    color: #00aaff;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-left: 5vw;  
+    
+}
+
+.button-container {
+    display: flex;
+    flex-direction: column;
+    height: auto;
+
+}
+
+.button {
+    font-family: 'Press Start 2P', cursive;
+    padding: 1vh 2vw;
+    border: 0.4vw solid #000428;
+    box-shadow: 0.5vw 0.5vw 0 #004e92;
+    background: #002b5e;
+    color: #00aaff;
+    cursor: pointer;
+    font-size: 1rem;
+    transition: all 0.3s ease;
+}
+
+.button:hover {
+    background: #004e92;
+    box-shadow: 0.6vw 0.6vw 0 #000428;
+    transform: translate(0.2vw, 0.2vw);
+}
+
+#back-button {
+    margin-top: 2vh;
+}
+
+.head {
+    font-size: 1rem;
+    font-weight: bold;
+    background: #00aaff;
+    padding: 0.625rem; 
+    text-align: center;
+    color: #000428;
+    border-bottom: 0.25rem solid #000428; 
+    margin-left: -0.9vw;
+    display: flex;
+    justify-content: center; /* Centra el contenido horizontalmente */
+    align-items: center; /* Centra el contenido verticalmente */
+}
+
+
+
+.card-content p {
+    margin: 0;
+    padding: 0.5vh 1vw; /* Espaciado para los párrafos */
+    margin-bottom: 2vh;
+}
+
+
+.star {
+    position: absolute;
+    width: 3px;
+    height: 3px;
+    background: white;
+    box-shadow: 0 0 5px white;
+    border-radius: 50%;
+    animation: twinkle 2s infinite alternate;
+}
+
+@keyframes twinkle {
+    0% { opacity: 0.5; }
+    100% { opacity: 1; }
+}
+
+.meteor {
+    position: absolute;
+    width: 80px;
+    height: 2px;
+    background: gold;
+    box-shadow: 0 0 10px gold;
+    transform: rotate(-30deg);
+    opacity: 0;
+    animation: shooting 3s infinite linear;
+}
+
+@keyframes shooting {
+    0% {
+        transform: translate(100vw, -150vh) rotate(-30deg);
+        opacity: 0.5;
+    }
+    100% {
+        transform: translate(-10vw, 100vh) rotate(-30deg);
+        opacity: 0;
+    }
+}
+
+
+
