@@ -50,7 +50,7 @@ app.get("/coordenadas", (req, res) => {
 });
 
 // Nueva ruta para obtener datos históricos entre dos fechas
-app.get("/api/historicos", (req, res) => {
+app.get("/historicos", (req, res) => {
     const { inicio, fin } = req.query;
     
     if (!inicio || !fin) {
