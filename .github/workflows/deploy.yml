@@ -122,10 +122,16 @@ jobs:
   # Jobs para despliegues en main (tras PR)
   deploy-main-angie:
     runs-on: [self-hosted, ec2-an-main".]
-    if: github.event_name == 'pull_request' && github.event.pull_request.merged == true && github.event.pull_request.base.ref == 'main'
+    if: github.ref == 'refs/heads/main'
     steps:
       - name: Checkout del código
         uses: actions/checkout@v4
+
+      - name: Copiar código a directorio destino
+        run: |
+          mkdir -p ~/gps-finder
+          rsync -av $GITHUB_WORKSPACE/ ~/gps-finder/
+          echo "✅ Código copiado a ~/gps-finder." 
 
       - name: Desplegar frontend
         run: |
@@ -149,7 +155,7 @@ jobs:
 
   deploy-main-ally:
     runs-on: [self-hosted, ec2-al-main]
-    if: github.event_name == 'pull_request' && github.event.pull_request.merged == true && github.event.pull_request.base.ref == 'main'
+    if: github.ref == 'refs/heads/main'
     steps:
       - name: Checkout del código
         uses: actions/checkout@v4
@@ -176,7 +182,7 @@ jobs:
 
   deploy-main-habid:
     runs-on: [self-hosted, main]
-    if: github.event_name == 'pull_request' && github.event.pull_request.merged == true && github.event.pull_request.base.ref == 'main'
+    if: github.ref == 'refs/heads/main'
     steps:
       - name: Checkout del código
         uses: actions/checkout@v4
@@ -203,7 +209,7 @@ jobs:
 
   deploy-main-felipe:
     runs-on: [self-hosted, ec2-fe-main]
-    if: github.event_name == 'pull_request' && github.event.pull_request.merged == true && github.event.pull_request.base.ref == 'main'
+    if: github.ref == 'refs/heads/main'
     steps:
       - name: Checkout del código
         uses: actions/checkout@v4
