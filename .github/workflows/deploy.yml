@@ -18,6 +18,12 @@ jobs:
       - name: Checkout del código
         uses: actions/checkout@v4
 
+      - name: Copiar código a directorio destino
+        run: |
+          mkdir -p ~/gps-finder
+          rsync -av $GITHUB_WORKSPACE/ ~/gps-finder/
+          echo "✅ Código copiado a ~/gps-finder."
+
       - name: Desplegar frontend
         run: |
           sudo mkdir -p /var/www/gps-finder/html/
@@ -44,6 +50,12 @@ jobs:
     steps:
       - name: Checkout del código
         uses: actions/checkout@v4
+
+      - name: Copiar código a directorio destino
+        run: |
+          mkdir -p ~/gps-finder
+          rsync -av $GITHUB_WORKSPACE/ ~/gps-finder/
+          echo "✅ Código copiado a ~/gps-finder."
 
       - name: Desplegar frontend
         run: |
@@ -72,6 +84,12 @@ jobs:
       - name: Checkout del código
         uses: actions/checkout@v4
 
+      - name: Copiar código a directorio destino
+        run: |
+          mkdir -p ~/gps-finder
+          rsync -av $GITHUB_WORKSPACE/ ~/gps-finder/
+          echo "✅ Código copiado a ~/gps-finder."
+
       - name: Desplegar frontend
         run: |
           sudo mkdir -p /var/www/gps-finder/html/
@@ -98,6 +116,12 @@ jobs:
     steps:
       - name: Checkout del código
         uses: actions/checkout@v4
+
+      - name: Copiar código a directorio destino
+        run: |
+          mkdir -p ~/gps-finder
+          rsync -av $GITHUB_WORKSPACE/ ~/gps-finder/
+          echo "✅ Código copiado a ~/gps-finder."
 
       - name: Desplegar frontend
         run: |
@@ -160,6 +184,12 @@ jobs:
       - name: Checkout del código
         uses: actions/checkout@v4
 
+      - name: Copiar código a directorio destino
+        run: |
+          mkdir -p ~/gps-finder
+          rsync -av $GITHUB_WORKSPACE/ ~/gps-finder/
+          echo "✅ Código copiado a ~/gps-finder."
+
       - name: Desplegar frontend
         run: |
           sudo mkdir -p /var/www/gps-finder/html/
@@ -187,6 +217,12 @@ jobs:
       - name: Checkout del código
         uses: actions/checkout@v4
 
+      - name: Copiar código a directorio destino
+        run: |
+          mkdir -p ~/gps-finder
+          rsync -av $GITHUB_WORKSPACE/ ~/gps-finder/
+          echo "✅ Código copiado a ~/gps-finder."
+
       - name: Desplegar frontend
         run: |
           sudo mkdir -p /var/www/gps-finder/html/
@@ -213,6 +249,12 @@ jobs:
     steps:
       - name: Checkout del código
         uses: actions/checkout@v4
+
+      - name: Copiar código a directorio destino
+        run: |
+          mkdir -p ~/gps-finder
+          rsync -av $GITHUB_WORKSPACE/ ~/gps-finder/
+          echo "✅ Código copiado a ~/gps-finder."
 
       - name: Desplegar frontend
         run: |
