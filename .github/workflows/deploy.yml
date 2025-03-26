@@ -7,14 +7,12 @@ on:
       - dev-al  # Rama para Ally-test
       - dev-ha  # Rama para Habid-test
       - dev-fe  # Rama para Felipe-test
-  pull_request:
-    branches:
-      - main  # Despliegue en main tras merge de PR
+      - main    # Despliegue en main tras merge
 
 jobs:
   # Jobs para despliegues en ramas dev (test)
   deploy-test-an:
-    runs-on: Angie-test
+    runs-on: [self-hosted, test]  # Etiqueta común para runners de prueba
     if: github.ref == 'refs/heads/dev-an'
     steps:
       - name: Checkout del código
@@ -41,7 +39,7 @@ jobs:
           echo "✅ Servicios reiniciados."
 
   deploy-test-al:
-    runs-on: Ally-test
+    runs-on: [self-hosted, test-al]
     if: github.ref == 'refs/heads/dev-al'
     steps:
       - name: Checkout del código
@@ -68,7 +66,7 @@ jobs:
           echo "✅ Servicios reiniciados."
 
   deploy-test-ha:
-    runs-on: Habid-test
+    runs-on: [self-hosted, test]
     if: github.ref == 'refs/heads/dev-ha'
     steps:
       - name: Checkout del código
@@ -95,7 +93,7 @@ jobs:
           echo "✅ Servicios reiniciados."
 
   deploy-test-fe:
-    runs-on: Felipe-test
+    runs-on: [self-hosted, ec2-fe-test]
     if: github.ref == 'refs/heads/dev-fe'
     steps:
       - name: Checkout del código
@@ -123,7 +121,7 @@ jobs:
 
   # Jobs para despliegues en main (tras PR)
   deploy-main-angie:
-    runs-on: Angie
+    runs-on: [self-hosted, ec2-an-main".]
     if: github.event_name == 'pull_request' && github.event.pull_request.merged == true && github.event.pull_request.base.ref == 'main'
     steps:
       - name: Checkout del código
@@ -150,7 +148,7 @@ jobs:
           echo "✅ Servicios reiniciados."
 
   deploy-main-ally:
-    runs-on: Ally
+    runs-on: [self-hosted, ec2-al-main]
     if: github.event_name == 'pull_request' && github.event.pull_request.merged == true && github.event.pull_request.base.ref == 'main'
     steps:
       - name: Checkout del código
@@ -177,7 +175,7 @@ jobs:
           echo "✅ Servicios reiniciados."
 
   deploy-main-habid:
-    runs-on: Habid
+    runs-on: [self-hosted, main]
     if: github.event_name == 'pull_request' && github.event.pull_request.merged == true && github.event.pull_request.base.ref == 'main'
     steps:
       - name: Checkout del código
@@ -204,7 +202,7 @@ jobs:
           echo "✅ Servicios reiniciados."
 
   deploy-main-felipe:
-    runs-on: Felipe
+    runs-on: [self-hosted, ec2-fe-main]
     if: github.event_name == 'pull_request' && github.event.pull_request.merged == true && github.event.pull_request.base.ref == 'main'
     steps:
       - name: Checkout del código
