@@ -62,8 +62,9 @@
             attribution: '© OpenStreetMap contributors'
         }).addTo(map);
 
-        var marker;
-        var polyline = L.polyline([], {color: 'blue', weight: 5}).addTo(map);
+        var startMarker, endMarker;
+        var polyline = L.polyline([], { color: '#004e92', weight: 6 }).addTo(map); 
+
 
         // Configurar restricciones iniciales
         const startDateTime = document.getElementById('startDateTime');
@@ -125,13 +126,30 @@
                     let route = data.map(coord => [parseFloat(coord.latitud), parseFloat(coord.longitud)]);
                     polyline.setLatLngs(route);
 
-                    if (marker) {
-                        marker.setLatLng(route[route.length - 1]);
-                    } else {
-                        marker = L.marker(route[route.length - 1]).addTo(map)
-                            .bindPopup("Última posición registrada").openPopup();
+                    // Limpiar marcadores previos
+                    if (startMarker) map.removeLayer(startMarker);
+                    if (endMarker) map.removeLayer(endMarker);
+
+                    // Colocar marcadores solo en el inicio y el final
+                    if (route.length > 1) {
+                        startMarker = L.marker(route[0], {
+                            icon: L.divIcon({
+                                className: 'custom-marker',
+                                html: '<div style="color: black; font-weight: bold; background: #FFD700; padding: 8px; border-radius: 50%; text-align: center;">A</div>',
+                                iconSize: [35, 35]
+                            })
+                        }).addTo(map);
+
+                        endMarker = L.marker(route[route.length - 1], {
+                            icon: L.divIcon({
+                                className: 'custom-marker',
+                                html: '<div style="color: white; font-weight: bold; background: #4B0082; padding: 8px; border-radius: 50%; text-align: center;">B</div>',
+                                iconSize: [35, 35]
+                            })
+                        }).addTo(map);
                     }
 
+                    // Ajustar la vista del mapa para mostrar toda la ruta
                     map.fitBounds(polyline.getBounds());
                 })
                 .catch(error => console.error("Error al obtener datos históricos:", error));
