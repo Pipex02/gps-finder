@@ -6,6 +6,7 @@
     <title>Consulta de Históricos</title>
     <link rel="stylesheet" href="styles2.css" />
     <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+  
   </head>
   <body>
     <header class="title-container">
@@ -25,9 +26,22 @@
           <h2>Fecha y hora de fin:</h2>
           <input type="datetime-local" id="endDateTime" />
           <br /><br />
+         
           <div class="button-container">
             <button class="button" onclick="consultar()">Consultar</button>
-            <button id="consult-button" class="button" disabled>Ubicación Específica</button>
+            <h2>Ciudad:</h2>
+            <select id="city-select">
+              <option value="Barranquilla" selected>Barranquilla</option>
+              <option value="Bogotá">Bogotá</option>
+              <option value="Medellín">Medellín</option>
+              <option value="Cali">Cali</option>
+              <option value="Cartagena">Cartagena</option>
+            </select>
+            <br /><br />
+            <input type="text" id="location-input" placeholder="Ingrese ubicación" />
+            <div id="suggestions-box" class="suggestions"></div>
+            <input type="number" id="radius-input" placeholder="Radio (m)" min="50" max="5000" />
+            <button id="consult-button" class="button" disabled>Consultar Ubicación Específica</button>
           </div>
         </section>
       </div>
@@ -35,7 +49,7 @@
 
     <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
     <script>
-      // Generar estrellas y meteoros al cargar la página
+      // Generar estrellas y meteoros
       function generarElementosDecorativos() {
         for (let i = 0; i < 100; i++) {
           const star = document.createElement("div");
@@ -44,7 +58,6 @@
           star.style.left = `${Math.random() * 100}%`;
           document.body.appendChild(star);
         }
-
         for (let i = 0; i < 30; i++) {
           const meteor = document.createElement("div");
           meteor.className = "meteor";
@@ -55,7 +68,7 @@
         }
       }
 
-      // Inicializar el mapa y variables globales
+      // Inicializar el mapa
       const map = L.map("map").setView([0, 0], 2);
       L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
         attribution: "© OpenStreetMap contributors",
@@ -90,7 +103,7 @@
         inhabilitarBoton();
       }
 
-      // Consultar la API
+      // Consultar la API de históricos
       function consultar() {
         const startInput = startDateTime.value;
         const endInput = endDateTime.value;
@@ -109,8 +122,6 @@
 
         const startFormatted = `${startInput.replace("T", " ")}:00`;
         const endFormatted = `${endInput.replace("T", " ")}:00`;
-
-        console.log("Consultando API con rango:", startFormatted, "a", endFormatted);
 
         fetch(`/api/historicos?inicio=${encodeURIComponent(startFormatted)}&fin=${encodeURIComponent(endFormatted)}`)
           .then((response) => {
@@ -158,8 +169,117 @@
           });
       }
 
-      // Inicialización al cargar la página
-      document.addEventListener("DOMContentLoaded", () => {
+      // Funciones de Geoapify
+      async function getApiKey() {
+        const response = await fetch('/api/config');
+        if (!response.ok) throw new Error("Error al obtener la configuración");
+        const config = await response.json();
+        return config.geoapifyApiKey;
+      }
+
+      async function fetchAutocomplete(query, city, apiKey) {
+        const response = await fetch(
+          `https://api.geoapify.com/v1/geocode/autocomplete?text=${encodeURIComponent(query)}&city=${encodeURIComponent(city)}&limit=4&apiKey=${apiKey}`
+        );
+        const data = await response.json();
+        return data.features.map(feature => ({
+          label: feature.properties.formatted,
+          lat: feature.properties.lat,
+          lon: feature.properties.lon
+        }));
+      }
+
+      async function fetchCoordinates(address, city, apiKey) {
+        const response = await fetch(
+          `https://api.geoapify.com/v1/geocode/search?text=${encodeURIComponent(address)}&city=${encodeURIComponent(city)}&limit=1&apiKey=${apiKey}`
+        );
+        const data = await response.json();
+        if (data.features.length > 0) {
+          return {
+            lat: data.features[0].properties.lat,
+            lon: data.features[0].properties.lon
+          };
+        }
+        return null;
+      }
+
+      // Inicialización
+      document.addEventListener("DOMContentLoaded", async () => {
+        const apiKey = await getApiKey();
+        const locationInput = document.getElementById("location-input");
+        const suggestionsBox = document.getElementById("suggestions-box");
+        const citySelect = document.getElementById("city-select");
+        const radiusInput = document.getElementById("radius-input");
+
+        // Autocompletado
+        locationInput.addEventListener("input", async () => {
+          const query = locationInput.value;
+          const city = citySelect.value;
+          if (query.length < 7) {
+            suggestionsBox.style.display = "none";
+            return;
+          }
+
+          const suggestions = await fetchAutocomplete(query, city, apiKey);
+          suggestionsBox.innerHTML = "";
+          suggestions.forEach((suggestion, index) => {
+            const div = document.createElement("div");
+            div.className = "suggestion-item";
+            div.textContent = suggestion.label;
+            div.dataset.index = index;
+            div.addEventListener("click", () => {
+              locationInput.value = suggestion.label;
+              suggestionsBox.style.display = "none";
+            });
+            suggestionsBox.appendChild(div);
+          });
+          suggestionsBox.style.display = suggestions.length > 0 ? "block" : "none";
+        });
+
+        // Ocultar sugerencias al perder foco (opcional)
+        locationInput.addEventListener("blur", () => {
+          setTimeout(() => (suggestionsBox.style.display = "none"), 200);
+        });
+
+        // Consultar coordenadas al hacer clic en "Ubicación Específica"
+        consultButton.addEventListener("click", async () => {
+          const address = locationInput.value;
+          const city = citySelect.value;
+          const radius = radiusInput.value;
+
+          if (!address || !radius) {
+            alert("Por favor, ingrese una ubicación y un radio.");
+            return;
+          }
+
+          const coords = await fetchCoordinates(address, city, apiKey);
+          if (coords) {
+            const { lat, lon } = coords;
+            console.log(`Coordenadas obtenidas: lat=${lat}, lng=${lon}`);
+
+            // Mostrar marcador y círculo
+            if (window.locationMarker) map.removeLayer(window.locationMarker);
+            if (window.locationCircle) map.removeLayer(window.locationCircle);
+
+            window.locationMarker = L.marker([lat, lon])
+              .addTo(map)
+              .bindPopup(`Ubicación: ${address}<br>Radio: ${radius}m`)
+              .openPopup();
+
+            window.locationCircle = L.circle([lat, lon], {
+              color: "blue",
+              fillColor: "#add8e6",
+              fillOpacity: 0.3,
+              radius: parseFloat(radius),
+            }).addTo(map);
+
+            map.setView([lat, lon], 14);
+          } else {
+            alert("Ubicación no encontrada.");
+          }
+        });
+
+        // Resto de la inicialización
         generarElementosDecorativos();
         startDateTime.addEventListener("input", actualizarRestricciones);
         endDateTime.addEventListener("input", actualizarRestricciones);

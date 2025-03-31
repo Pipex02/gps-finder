@@ -121,12 +121,13 @@ h1 {
     display: flex;
     flex-direction: column;
     height: auto;
+    padding: 2vh;
 
 }
 
 .button {
     font-family: 'Press Start 2P', cursive;
-    padding: 1vh 2vw;
+    padding: 0.8vh 2vw;
     border: 0.4vw solid #00aaff;
     box-shadow: 0.5vw 0.5vw 0 #004e92;
     background: #002b5e;
@@ -142,15 +143,63 @@ h1 {
     transform: translate(0.2vw, 0.2vw);
 }
 
+
+.search-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1vh;
+    margin: 2vh auto;
+    padding: 2vh;
+    background: #002b5e;
+    border-radius: 1vw;
+    box-shadow: 0.5vw 0.5vw 0 #004e92;
+    width: 25vw;
+}
+
+.search-container input {
+    width: 80%;
+    padding: 1vh;
+    font-size: 1rem;
+    border: 0.3vw solid #00aaff;
+    border-radius: 0.5vw;
+    background: #000428;
+    color: #00aaff;
+    text-align: center;
+}
+
+.suggestions {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    width: 100%;
+    background: white;
+    border: 1px solid #ccc;
+    border-top: none;
+    max-height: 200px;
+    overflow-y: auto;
+    z-index: 1000;
+    display: none;
+}
+
+.suggestion-item {
+    padding: 10px;
+    cursor: pointer;
+}
+
+.suggestion-item:hover {
+    background: #f0f0f0;
+}
+
 #consult-button {
     font-family: 'Press Start 2P', cursive;
     padding: 1vh 2vw;
-    margin-top: 5vh;
+    margin-top: 8vh;
     border: 0.4vw solid #00aaff;
     box-shadow: 0.5vw 0.5vw 0 #004e92;
     background: #010811;
     color: #00aaff;
-    font-size: 1rem;
+    font-size: 0.8rem;
     text-align: center;
     text-decoration: none;
     display: inline-block;
@@ -159,11 +208,11 @@ h1 {
 
 #consult-button:enabled {
     cursor: pointer;
-    background: #0057b3;
+    background: #010811;
 }
 
 #consult-button:disabled:hover {
-    background: #002b5e;
+    background: #010811;
     box-shadow: 0.5vw 0.5vw 0 #004e92;
     transform: none;
     cursor: not-allowed;
