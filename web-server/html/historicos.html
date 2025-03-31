@@ -1,159 +1,170 @@
 <!DOCTYPE html>
 <html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Consulta de Históricos</title>
-    <link rel="stylesheet" href="styles2.css">
+    <link rel="stylesheet" href="styles2.css" />
     <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
-</head>
-<body>
-    <script>
-        // Generar muchas estrellas
-        for (let i = 0; i < 100; i++) {
-            let star = document.createElement('div');
-            star.className = 'star';
-            star.style.top = Math.random() * 100 + '%';
-            star.style.left = Math.random() * 100 + '%';
-            document.body.appendChild(star);
-        }
-
-        // Generar más meteoros
-        for (let i = 0; i < 30; i++) {
-            let meteor = document.createElement('div');
-            meteor.className = 'meteor';
-            meteor.style.top = Math.random() * 100 + '%';
-            meteor.style.left = Math.random() * 100 + '%';
-            meteor.style.animationDelay = Math.random() * 5 + 's';
-            document.body.appendChild(meteor);
-        }
-    </script>
+  </head>
+  <body>
     <header class="title-container">
-        <a href="index.html" id="back-button" class="button">Regresar</a>
-        <img src="perrito.webp" alt="perrito" class="title-image">
-        <h1 class="title">Históricos</h1>
+      <a href="index.html" id="back-button" class="button">Regresar</a>
+      <img src="perrito.webp" alt="perrito" class="title-image" />
+      <h1 class="title">Históricos</h1>
     </header>
     <div class="content">
-        <div id="map-container">
-            <div id="map"></div>
-        </div>
-        <div class="info">
-            <section class="card datetime-card">
-                <h2>Fecha y hora de inicio:</h2>
-                <input type="datetime-local" id="startDateTime" onchange="actualizarRestricciones()">
-                <br><br>
-
-                <h2>Fecha y hora de fin:</h2>
-                <input type="datetime-local" id="endDateTime">
-                <br><br>
-
-                <div class="button-container">
-                    <button class="button" onclick="consultar()">Consultar</button>
-                </div>
-            </section>
-        </div>
+      <div id="map-container">
+        <div id="map"></div>
+      </div>
+      <div class="info">
+        <section class="card datetime-card">
+          <h2>Fecha y hora de inicio:</h2>
+          <input type="datetime-local" id="startDateTime" />
+          <br /><br />
+          <h2>Fecha y hora de fin:</h2>
+          <input type="datetime-local" id="endDateTime" />
+          <br /><br />
+          <div class="button-container">
+            <button class="button" onclick="consultar()">Consultar</button>
+            <button id="consult-button" class="button" disabled>Ubicación Específica</button>
+          </div>
+        </section>
+      </div>
     </div>
 
     <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
     <script>
-        // Inicializar el mapa
-        var map = L.map('map').setView([0, 0], 2);
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: '© OpenStreetMap contributors'
-        }).addTo(map);
-
-        var startMarker, endMarker;
-        var polyline = L.polyline([], { color: '#004e92', weight: 6 }).addTo(map); 
-
-
-        // Configurar restricciones iniciales
-        const startDateTime = document.getElementById('startDateTime');
-        const endDateTime = document.getElementById('endDateTime');
-
-        // Fecha mínima: 25 de marzo de 2025 a las 10:00:00 (hora de Colombia, UTC-5)
-        const minDate = new Date('2025-03-25T10:00:00-05:00'); // Hora de Colombia
-        startDateTime.min = minDate.toISOString().slice(0, 16); // Formato para datetime-local: "2025-03-25T10:00"
-        startDateTime.value = minDate.toISOString().slice(0, 16); // Valor inicial
-
-        // Configurar la fecha de fin para que no sea anterior a la de inicio
-        endDateTime.min = startDateTime.value;
-
-        // Función para actualizar restricciones dinámicamente
-        function actualizarRestricciones() {
-            const startValue = startDateTime.value;
-            if (startValue) {
-                endDateTime.min = startValue; // La fecha de fin no puede ser anterior a la de inicio
-                if (endDateTime.value && endDateTime.value < startValue) {
-                    endDateTime.value = startValue; // Ajustar si ya había un valor
-                }
-            }
+      // Generar estrellas y meteoros al cargar la página
+      function generarElementosDecorativos() {
+        for (let i = 0; i < 100; i++) {
+          const star = document.createElement("div");
+          star.className = "star";
+          star.style.top = `${Math.random() * 100}%`;
+          star.style.left = `${Math.random() * 100}%`;
+          document.body.appendChild(star);
         }
 
-        // Función para consultar la API
-        function consultar() {
-            let startInput = startDateTime.value;
-            let endInput = endDateTime.value;
-
-            // Validar que ambas fechas estén seleccionadas
-            if (!startInput || !endInput) {
-                alert("Selecciona ambas fechas y horas.");
-                return;
-            }
-
-            // Validar que la fecha de fin sea posterior a la de inicio
-            const startDate = new Date(startInput);
-            const endDate = new Date(endInput);
-            if (endDate <= startDate) {
-                alert("La fecha y hora de fin deben ser posteriores a la de inicio.");
-                return;
-            }
-
-            // Convertir al formato "YYYY-MM-DD HH:MM:SS" para la API
-            const startFormatted = startInput.replace('T', ' ') + ':00';
-            const endFormatted = endInput.replace('T', ' ') + ':00';
-
-            console.log('Consultando API con rango:', startFormatted, 'a', endFormatted);
-
-            // Hacer fetch a la API con los parámetros inicio y fin
-            fetch(`/api/historicos?inicio=${encodeURIComponent(startFormatted)}&fin=${encodeURIComponent(endFormatted)}`)
-                .then(response => response.json())
-                .then(data => {
-                    if (data.length === 0) {
-                        alert("No hay datos en este rango de tiempo.");
-                        return;
-                    }
-
-                    let route = data.map(coord => [parseFloat(coord.latitud), parseFloat(coord.longitud)]);
-                    polyline.setLatLngs(route);
-
-                    // Limpiar marcadores previos
-                    if (startMarker) map.removeLayer(startMarker);
-                    if (endMarker) map.removeLayer(endMarker);
-
-                    // Colocar marcadores solo en el inicio y el final
-                    if (route.length > 1) {
-                        startMarker = L.marker(route[0], {
-                            icon: L.divIcon({
-                                className: 'custom-marker',
-                                html: '<div style="color: black; font-weight: bold; background: #FFD700; padding: 8px; border-radius: 50%; text-align: center;">A</div>',
-                                iconSize: [35, 35]
-                            })
-                        }).addTo(map);
-
-                        endMarker = L.marker(route[route.length - 1], {
-                            icon: L.divIcon({
-                                className: 'custom-marker',
-                                html: '<div style="color: white; font-weight: bold; background: #4B0082; padding: 8px; border-radius: 50%; text-align: center;">B</div>',
-                                iconSize: [35, 35]
-                            })
-                        }).addTo(map);
-                    }
-
-                    // Ajustar la vista del mapa para mostrar toda la ruta
-                    map.fitBounds(polyline.getBounds());
-                })
-                .catch(error => console.error("Error al obtener datos históricos:", error));
+        for (let i = 0; i < 30; i++) {
+          const meteor = document.createElement("div");
+          meteor.className = "meteor";
+          meteor.style.top = `${Math.random() * 100}%`;
+          meteor.style.left = `${Math.random() * 100}%`;
+          meteor.style.animationDelay = `${Math.random() * 5}s`;
+          document.body.appendChild(meteor);
         }
+      }
+
+      // Inicializar el mapa y variables globales
+      const map = L.map("map").setView([0, 0], 2);
+      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+        attribution: "© OpenStreetMap contributors",
+      }).addTo(map);
+
+      let startMarker, endMarker;
+      const polyline = L.polyline([], { color: "#004e92", weight: 6 }).addTo(map);
+
+      // Configuración inicial de fechas
+      const startDateTime = document.getElementById("startDateTime");
+      const endDateTime = document.getElementById("endDateTime");
+      const consultButton = document.getElementById("consult-button");
+
+      const minDate = new Date("2025-03-25T10:00:00-05:00");
+      startDateTime.min = minDate.toISOString().slice(0, 16);
+      startDateTime.value = minDate.toISOString().slice(0, 16);
+      endDateTime.min = startDateTime.value;
+
+      // Funciones de control del botón
+      const inhabilitarBoton = () => (consultButton.disabled = true);
+      const habilitarBoton = () => (consultButton.disabled = false);
+
+      // Actualizar restricciones de fechas
+      function actualizarRestricciones() {
+        const startValue = startDateTime.value;
+        if (startValue) {
+          endDateTime.min = startValue;
+          if (endDateTime.value && endDateTime.value < startValue) {
+            endDateTime.value = startValue;
+          }
+        }
+        inhabilitarBoton();
+      }
+
+      // Consultar la API
+      function consultar() {
+        const startInput = startDateTime.value;
+        const endInput = endDateTime.value;
+
+        if (!startInput || !endInput) {
+          alert("Selecciona ambas fechas y horas.");
+          return;
+        }
+
+        const startDate = new Date(startInput);
+        const endDate = new Date(endInput);
+        if (endDate <= startDate) {
+          alert("La fecha y hora de fin deben ser posteriores a la de inicio.");
+          return;
+        }
+
+        const startFormatted = `${startInput.replace("T", " ")}:00`;
+        const endFormatted = `${endInput.replace("T", " ")}:00`;
+
+        console.log("Consultando API con rango:", startFormatted, "a", endFormatted);
+
+        fetch(`/api/historicos?inicio=${encodeURIComponent(startFormatted)}&fin=${encodeURIComponent(endFormatted)}`)
+          .then((response) => {
+            if (!response.ok) throw new Error("Error en la respuesta de la API");
+            return response.json();
+          })
+          .then((data) => {
+            if (!data || data.length === 0) {
+              alert("No hay datos en este rango de tiempo.");
+              inhabilitarBoton();
+              return;
+            }
+
+            const route = data.map((coord) => [parseFloat(coord.latitud), parseFloat(coord.longitud)]);
+            polyline.setLatLngs(route);
+
+            if (startMarker) map.removeLayer(startMarker);
+            if (endMarker) map.removeLayer(endMarker);
+
+            if (route.length > 1) {
+              startMarker = L.marker(route[0], {
+                icon: L.divIcon({
+                  className: "custom-marker",
+                  html: '<div style="color: black; font-weight: bold; background: #FFD700; padding: 8px; border-radius: 50%; text-align: center;">A</div>',
+                  iconSize: [35, 35],
+                }),
+              }).addTo(map);
+
+              endMarker = L.marker(route[route.length - 1], {
+                icon: L.divIcon({
+                  className: "custom-marker",
+                  html: '<div style="color: white; font-weight: bold; background: #4B0082; padding: 8px; border-radius: 50%; text-align: center;">B</div>',
+                  iconSize: [35, 35],
+                }),
+              }).addTo(map);
+            }
+
+            map.fitBounds(polyline.getBounds());
+            habilitarBoton();
+          })
+          .catch((error) => {
+            console.error("Error al obtener datos históricos:", error);
+            inhabilitarBoton();
+            alert("Error al consultar la API. Intenta de nuevo.");
+          });
+      }
+
+      // Inicialización al cargar la página
+      document.addEventListener("DOMContentLoaded", () => {
+        generarElementosDecorativos();
+        startDateTime.addEventListener("input", actualizarRestricciones);
+        endDateTime.addEventListener("input", actualizarRestricciones);
+        inhabilitarBoton();
+      });
     </script>
-</body>
+  </body>
 </html>
