@@ -1,0 +1,135 @@
+name: Deploy to Test Environments
+
+on:
+  push:
+    branches:
+      - dev-an
+      - dev-al
+      - dev-ha
+      - dev-fe
+
+jobs:
+  # Jobs para despliegues en ramas dev (test)
+  deploy-test-an:
+    runs-on: [self-hosted, test]
+    if: github.ref == 'refs/heads/dev-an'
+    steps:
+      - name: Checkout del código
+        uses: actions/checkout@v4
+
+      - name: Copiar variables de entorno
+        run: |
+          cp ~/backup/gps-finder/.env-test .env
+          echo "✅ Variables de entorno copiadas."
+
+      - name: Desplegar frontend
+        run: |
+          sudo mkdir -p /var/www/gps-finder-test/html/
+          sudo rsync -av web-server/html/ /var/www/gps-finder-test/html/
+          sudo chown -R www-data:www-data /var/www/gps-finder-test/html
+          sudo chmod -R 755 /var/www/gps-finder-test/html
+          echo "✅ Frontend desplegado."
+
+      - name: Instalar dependencias
+        run: |
+          cd api-rest/
+          npm install
+          echo "✅ Dependencias instaladas."
+
+      - name: Reiniciar servicios
+        run: |
+          sudo systemctl restart api-rest-test
+          echo "✅ Servicios reiniciados."
+
+  deploy-test-al:
+    runs-on: [self-hosted, test-al]
+    if: github.ref == 'refs/heads/dev-al'
+    steps:
+      - name: Checkout del código
+        uses: actions/checkout@v4
+
+      - name: Copiar variables de entorno
+        run: |
+          cp ~/backup/gps-finder/.env-test .env
+          echo "✅ Variables de entorno copiadas."
+
+      - name: Desplegar frontend
+        run: |
+          sudo mkdir -p /var/www/gps-finder-test/html/
+          sudo rsync -av web-server/html/ /var/www/gps-finder-test/html/
+          sudo chown -R www-data:www-data /var/www/gps-finder-test/html
+          sudo chmod -R 755 /var/www/gps-finder-test/html
+          echo "✅ Frontend desplegado."
+
+      - name: Instalar dependencias
+        run: |
+          cd api-rest/
+          npm install
+          echo "✅ Dependencias instaladas."
+
+      - name: Reiniciar servicios
+        run: |
+          sudo systemctl restart api-rest-test
+          echo "✅ Servicios reiniciados."
+
+  deploy-test-ha:
+    runs-on: [self-hosted, test]
+    if: github.ref == 'refs/heads/dev-ha'
+    steps:
+      - name: Checkout del código
+        uses: actions/checkout@v4
+
+      - name: Copiar variables de entorno
+        run: |
+          cp ~/backup/gps-finder/.env-test .env
+          echo "✅ Variables de entorno copiadas."
+
+      - name: Desplegar frontend
+        run: |
+          sudo mkdir -p /var/www/gps-finder-test/html/
+          sudo rsync -av web-server/html/ /var/www/gps-finder-test/html/
+          sudo chown -R www-data:www-data /var/www/gps-finder-test/html
+          sudo chmod -R 755 /var/www/gps-finder-test/html
+          echo "✅ Frontend desplegado."
+
+      - name: Instalar dependencias
+        run: |
+          cd api-rest/
+          npm install
+          echo "✅ Dependencias instaladas."
+
+      - name: Reiniciar servicios
+        run: |
+          sudo systemctl restart api-rest-test
+          echo "✅ Servicios reiniciados."
+
+  deploy-test-fe:
+    runs-on: [self-hosted, ec2-fe-test]
+    if: github.ref == 'refs/heads/dev-fe'
+    steps:
+      - name: Checkout del código
+        uses: actions/checkout@v4
+
+      - name: Copiar variables de entorno
+        run: |
+          cp ~/backup/gps-finder/.env-test .env
+          echo "✅ Variables de entorno copiadas."
+
+      - name: Desplegar frontend
+        run: |
+          sudo mkdir -p /var/www/gps-finder-test/html/
+          sudo rsync -av web-server/html/ /var/www/gps-finder-test/html/
+          sudo chown -R www-data:www-data /var/www/gps-finder-test/html
+          sudo chmod -R 755 /var/www/gps-finder-test/html
+          echo "✅ Frontend desplegado."
+
+      - name: Instalar dependencias
+        run: |
+          cd api-rest/
+          npm install
+          echo "✅ Dependencias instaladas."
+
+      - name: Reiniciar servicios
+        run: |
+          sudo systemctl restart api-rest-test
+          echo "✅ Servicios reiniciados."
