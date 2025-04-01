@@ -6,6 +6,24 @@ const cors = require("cors");
 const app = express();
 const PORT = 3000;
 
+// Ruta para servir el HTML con el título dinámico
+app.get('/', (req, res) => {
+    // Leer el archivo HTML
+    fs.readFile('index.html', 'utf8', (err, data) => {
+      if (err) {
+        return res.status(500).send('Error al leer el HTML');
+      }
+  
+      // Reemplazar el título con la variable de entorno
+      const modifiedHTML = data.replace(
+        /<title>.*?<\/title>/,
+        `<title>${process.env.APP_TITLE}</title>`  // se debe crear una nueva variable de este nombre
+      );
+  
+      res.send(modifiedHTML);
+    });
+});
+
 // Configuración de CORS para permitir peticiones desde el frontend
 app.use(cors());
 
