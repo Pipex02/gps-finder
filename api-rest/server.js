@@ -78,6 +78,41 @@ app.get("/historicos", (req, res) => {
     });
 });
 
+// 🚀 NUEVA RUTA: Obtener coordenadas dentro de un radio y en un rango de fechas
+app.get("/lugar", (req, res) => {
+    const { latitud, longitud, radio, inicio, fin } = req.query;
+
+    if (!latitud || !longitud || !radio || !inicio || !fin) {
+        return res.status(400).json({ error: "Faltan parámetros requeridos (latitud, longitud, radio, inicio, fin)." });
+    }
+
+    const query = `
+        SELECT latitud, longitud, timestamp,
+               (6371000 * ACOS(
+                   COS(RADIANS(?)) * COS(RADIANS(latitud)) * 
+                   COS(RADIANS(longitud) - RADIANS(?)) + 
+                   SIN(RADIANS(?)) * SIN(RADIANS(latitud))
+               )) AS distancia
+        FROM coordenadas
+        WHERE timestamp BETWEEN ? AND ?
+        HAVING distancia <= ?
+        ORDER BY timestamp ASC
+    `;
+
+    db.query(query, [latitud, longitud, latitud, inicio, fin, radio], (err, results) => {
+        if (err) {
+            console.error("❌ Error al obtener datos de la ubicación:", err);
+            res.status(500).json({ error: "Error al obtener datos de la ubicación" });
+        } else {
+            res.json(results.map(row => ({
+                latitud: parseFloat(row.latitud).toFixed(4),
+                longitud: parseFloat(row.longitud).toFixed(4),
+                timestamp: row.timestamp
+            })));
+        }
+    });
+});
+
 // Iniciar el servidor
 app.listen(PORT, () => {
     console.log(`🚀 Servidor corriendo en http://localhost:${PORT}`);
