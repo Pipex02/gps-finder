@@ -4,7 +4,7 @@ on:
   push:
     branches:
       - dev-an
-      - dev-al
+      - dev-ally
       - dev-ha
       - dev-fe
 
@@ -42,8 +42,8 @@ jobs:
           echo "✅ Servicios reiniciados."
 
   deploy-test-al:
-    runs-on: [self-hosted, test-al]
-    if: github.ref == 'refs/heads/dev-al'
+    runs-on: [self-hosted, al-test]
+    if: github.ref == 'refs/heads/dev-ally'
     steps:
       - name: Checkout del código
         uses: actions/checkout@v4
