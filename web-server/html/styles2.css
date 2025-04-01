@@ -31,6 +31,29 @@ h1 {
     text-shadow: 4px 4px 0 #000428, 8px 8px 0 #004e92;
 }
 
+#back-button {
+    font-family: 'Press Start 2P', cursive;
+    padding: 1vh 2vw;
+    border: 0.4vw solid #00aaff;
+    box-shadow: 0.5vw 0.5vw 0 #004e92;
+    background: #000428;
+    color: #00aaff;
+    cursor: pointer;
+    font-size: 1rem;
+    text-align: center;
+    text-decoration: none;
+    display: inline-block;
+    transition: all 0.2s ease;
+    position: absolute;
+    top: 3vh;
+    left: 4vw;
+}
+
+  
+
+
+
+
 .content {
     width: 100vw;
     height: 80vh;
@@ -59,6 +82,7 @@ h1 {
 
 .card {
     font-family: 'Press Start 2P', cursive;
+    font-size: 0.5rem; /* Ajusta el valor según necesites */
     width: 20vw;
     max-width: 25vw;
     background: #002b5e;
@@ -80,7 +104,7 @@ h1 {
     width: 20vw;
     max-width: 25vw;
     height: 100%;
-    background: #002b5e;
+    background: #000428;
     border: 0.3vw solid #000428;
     box-shadow: 0.4vw 0.4vw 0 #004e92;
     padding: 3vh;
@@ -97,13 +121,14 @@ h1 {
     display: flex;
     flex-direction: column;
     height: auto;
+    padding: 2vh;
 
 }
 
 .button {
     font-family: 'Press Start 2P', cursive;
-    padding: 1vh 2vw;
-    border: 0.4vw solid #000428;
+    padding: 0.8vh 2vw;
+    border: 0.4vw solid #00aaff;
     box-shadow: 0.5vw 0.5vw 0 #004e92;
     background: #002b5e;
     color: #00aaff;
@@ -118,9 +143,83 @@ h1 {
     transform: translate(0.2vw, 0.2vw);
 }
 
-#back-button {
-    margin-top: 2vh;
+
+.search-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1vh;
+    margin: 2vh auto;
+    padding: 2vh;
+    background: #002b5e;
+    border-radius: 1vw;
+    box-shadow: 0.5vw 0.5vw 0 #004e92;
+    width: 25vw;
 }
+
+.search-container input {
+    width: 80%;
+    padding: 1vh;
+    font-size: 1rem;
+    border: 0.3vw solid #00aaff;
+    border-radius: 0.5vw;
+    background: #000428;
+    color: #00aaff;
+    text-align: center;
+}
+
+.suggestions {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    width: 100%;
+    background: white;
+    border: 1px solid #ccc;
+    border-top: none;
+    max-height: 200px;
+    overflow-y: auto;
+    z-index: 1000;
+    display: none;
+}
+
+.suggestion-item {
+    padding: 10px;
+    cursor: pointer;
+}
+
+.suggestion-item:hover {
+    background: #f0f0f0;
+}
+
+#consult-button {
+    font-family: 'Press Start 2P', cursive;
+    padding: 1vh 2vw;
+    margin-top: 8vh;
+    border: 0.4vw solid #00aaff;
+    box-shadow: 0.5vw 0.5vw 0 #004e92;
+    background: #010811;
+    color: #00aaff;
+    font-size: 0.8rem;
+    text-align: center;
+    text-decoration: none;
+    display: inline-block;
+    transition: all 0.2s ease;
+}
+
+#consult-button:enabled {
+    cursor: pointer;
+    background: #010811;
+}
+
+#consult-button:disabled:hover {
+    background: #010811;
+    box-shadow: 0.5vw 0.5vw 0 #004e92;
+    transform: none;
+    cursor: not-allowed;
+}
+
+
+
 
 .head {
     font-size: 1rem;
@@ -181,6 +280,3 @@ h1 {
         opacity: 0;
     }
 }
-
-
-
