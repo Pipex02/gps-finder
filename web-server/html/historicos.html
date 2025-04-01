@@ -241,43 +241,81 @@
           setTimeout(() => (suggestionsBox.style.display = "none"), 200);
         });
 
-        // Consultar coordenadas al hacer clic en "Ubicación Específica"
-        consultButton.addEventListener("click", async () => {
-          const address = locationInput.value;
-          const city = citySelect.value;
-          const radius = radiusInput.value;
+        // Función para consultar ubicaciones dentro del radio
+        async function consultarUbicacionEspecifica() {
+        const address = locationInput.value;
+        const city = citySelect.value;
+        const radius = radiusInput.value;
 
-          if (!address || !radius) {
-            alert("Por favor, ingrese una ubicación y un radio.");
-            return;
-          }
+        if (!address || !radius) {
+          alert("Por favor, ingrese una ubicación y un radio.");
+          return;
+        }
 
-          const coords = await fetchCoordinates(address, city, apiKey);
-          if (coords) {
-            const { lat, lon } = coords;
-            console.log(`Coordenadas obtenidas: lat=${lat}, lng=${lon}`);
+        const coords = await fetchCoordinates(address, city, apiKey);
+        if (!coords) {
+          alert("Ubicación no encontrada.");
+          return;
+        }
 
-            // Mostrar marcador y círculo
-            if (window.locationMarker) map.removeLayer(window.locationMarker);
-            if (window.locationCircle) map.removeLayer(window.locationCircle);
+        const { lat, lon } = coords;
+        const startInput = startDateTime.value;
+        const endInput = endDateTime.value;
 
-            window.locationMarker = L.marker([lat, lon])
-              .addTo(map)
-              .bindPopup(`Ubicación: ${address}<br>Radio: ${radius}m`)
-              .openPopup();
+        if (!startInput || !endInput) {
+          alert("Selecciona ambas fechas y horas.");
+          return;
+        }
 
-            window.locationCircle = L.circle([lat, lon], {
-              color: "blue",
-              fillColor: "#add8e6",
-              fillOpacity: 0.3,
-              radius: parseFloat(radius),
-            }).addTo(map);
+        const startFormatted = `${startInput.replace("T", " ")}:00`;
+        const endFormatted = `${endInput.replace("T", " ")}:00`;
 
-            map.setView([lat, lon], 14);
-          } else {
-            alert("Ubicación no encontrada.");
-          }
-        });
+        fetch(`/lugar?latitud=${lat}&longitud=${lon}&radio=${radius}&inicio=${encodeURIComponent(startFormatted)}&fin=${encodeURIComponent(endFormatted)}`)
+          .then(response => {
+            if (!response.ok) throw new Error("Error en la respuesta de la API");
+            return response.json();
+          })
+          .then(data => {
+            if (!data || data.length === 0) {
+              alert("No hay datos en este rango de tiempo dentro del radio seleccionado.");
+              return;
+            }
+
+            // Ploteo de ruta en el mapa
+            const route = data.map(coord => [parseFloat(coord.latitud), parseFloat(coord.longitud)]);
+            polyline.setLatLngs(route);
+
+            if (startMarker) map.removeLayer(startMarker);
+            if (endMarker) map.removeLayer(endMarker);
+
+            if (route.length > 1) {
+              startMarker = L.marker(route[0], {
+                icon: L.divIcon({
+                  className: "custom-marker",
+                  html: '<div style="color: black; font-weight: bold; background: #FFD700; padding: 8px; border-radius: 50%; text-align: center;">A</div>',
+                  iconSize: [35, 35],
+                }),
+              }).addTo(map);
+
+              endMarker = L.marker(route[route.length - 1], {
+                icon: L.divIcon({
+                  className: "custom-marker",
+                  html: '<div style="color: white; font-weight: bold; background: #4B0082; padding: 8px; border-radius: 50%; text-align: center;">B</div>',
+                  iconSize: [35, 35],
+                }),
+              }).addTo(map);
+            }
+
+            map.fitBounds(polyline.getBounds());
+          })
+          .catch(error => {
+            console.error("Error al obtener datos de ubicación:", error);
+            alert("Error al consultar la API. Intenta de nuevo.");
+          });
+      }
+
+      // Modificamos el evento del botón de consulta de ubicación
+      consultButton.addEventListener("click", consultarUbicacionEspecifica);
 
         // Resto de la inicialización
         generarElementosDecorativos();
