@@ -56,8 +56,8 @@ app.get("/coordenadas", (req, res) => {
             if (results.length > 0) {
                 const data = results[0];
                 res.json({
-                    latitud: parseFloat(data.latitud).toFixed(4),
-                    longitud: parseFloat(data.longitud).toFixed(4),
+                    latitud: parseFloat(data.latitud).toFixed(5),
+                    longitud: parseFloat(data.longitud).toFixed(5),
                     timestamp: data.timestamp
                 });
             } else {
@@ -88,12 +88,26 @@ app.get("/historicos", (req, res) => {
             res.status(500).json({ error: "Error al obtener datos históricos" });
         } else {
             res.json(results.map(row => ({
-                latitud: parseFloat(row.latitud).toFixed(4),
-                longitud: parseFloat(row.longitud).toFixed(4),
+                latitud: parseFloat(row.latitud).toFixed(5),
+                longitud: parseFloat(row.longitud).toFixed(5),
                 timestamp: row.timestamp
             })));
         }
     });
+});
+
+// Ruta para obtener configuración de la API
+app.get("/config", (req, res) => {
+    const config = {
+        geoapifyApiKey: process.env.GEOAPIFY_KEY || "",
+        pageTitle: process.env.APP_TITLE || "Consulta de Históricos"
+    };
+
+    if (!config.geoapifyApiKey) {
+        console.warn("⚠️ ADVERTENCIA: La clave de la API Geoapify no está configurada");
+    }
+
+    res.json(config);
 });
 
 // Iniciar el servidor
