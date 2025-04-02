@@ -16,8 +16,8 @@ jobs:
 
       - name: Copiar código a directorio destino
         run: |
-          mkdir -p ~/gps-finder
-          rsync -av $GITHUB_WORKSPACE/ ~/gps-finder/
+          sudo mkdir -p ~/gps-finder
+          sudo rsync -av $GITHUB_WORKSPACE/ ~/gps-finder/
           echo "✅ Código copiado a ~/gps-finder." 
 
       - name: Desplegar frontend
@@ -49,8 +49,8 @@ jobs:
 
       - name: Copiar código a directorio destino
         run: |
-          mkdir -p ~/gps-finder
-          rsync -av $GITHUB_WORKSPACE/ ~/gps-finder/
+          sudo mkdir -p ~/gps-finder
+          sudo rsync -av $GITHUB_WORKSPACE/ ~/gps-finder/
           echo "✅ Código copiado a ~/gps-finder."
 
       - name: Desplegar frontend
@@ -82,8 +82,8 @@ jobs:
 
       - name: Copiar código a directorio destino
         run: |
-          mkdir -p ~/gps-finder
-          rsync -av $GITHUB_WORKSPACE/ ~/gps-finder/
+          sudo mkdir -p ~/gps-finder
+          sudo rsync -av $GITHUB_WORKSPACE/ ~/gps-finder/
           echo "✅ Código copiado a ~/gps-finder."
 
       - name: Desplegar frontend
@@ -115,8 +115,8 @@ jobs:
 
       - name: Copiar código a directorio destino
         run: |
-          mkdir -p ~/gps-finder
-          rsync -av $GITHUB_WORKSPACE/ ~/gps-finder/
+          sudo mkdir -p ~/gps-finder
+          sudo rsync -av $GITHUB_WORKSPACE/ ~/gps-finder/
           echo "✅ Código copiado a ~/gps-finder."
 
       - name: Desplegar frontend
