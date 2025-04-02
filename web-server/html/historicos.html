@@ -81,6 +81,7 @@
       const endDateTime = document.getElementById("endDateTime");
       const consultButton = document.getElementById("consult-button");
 
+
       const minDate = new Date("2025-03-25T00:00:00");
       const today = new Date();
       today.setHours(0, 0, 0, 0);
@@ -374,9 +375,45 @@
             setTimeout(() => (suggestionsBox.style.display = "none"), 200);
           });
 
-          // Evento para consultar ubicación específica
-          consultButton.addEventListener("click", consultarUbicacionEspecifica);
+          // Consultar coordenadas al hacer clic en "Ubicación Específica"
+          consultButton.addEventListener("click", async () => {
+            const address = locationInput.value;
+            const city = citySelect.value;
+            const radius = radiusInput.value;
 
+            if (!address || !radius) {
+              alert("Por favor, ingrese una ubicación y un radio.");
+              return;
+            }
+
+            const coords = await fetchCoordinates(address, city, apiKey);
+            if (coords) {
+              const { lat, lon } = coords;
+              console.log(`Coordenadas obtenidas: lat=${lat}, lng=${lon}`);
+
+              // Mostrar marcador y círculo
+              if (window.locationMarker) map.removeLayer(window.locationMarker);
+              if (window.locationCircle) map.removeLayer(window.locationCircle);
+
+              window.locationMarker = L.marker([lat, lon])
+                .addTo(map)
+                .bindPopup(`Ubicación: ${address}<br>Radio: ${radius}m`)
+                .openPopup();
+
+              window.locationCircle = L.circle([lat, lon], {
+                color: "blue",
+                fillColor: "#add8e6",
+                fillOpacity: 0.3,
+                radius: parseFloat(radius),
+              }).addTo(map);
+
+              map.setView([lat, lon], 14);
+            } else {
+              alert("Ubicación no encontrada.");
+            }
+          });
+
+          // Resto de la inicialización
           generarElementosDecorativos();
           startDateTime.addEventListener("input", actualizarRestricciones);
           endDateTime.addEventListener("input", actualizarRestricciones);
