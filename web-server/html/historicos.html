@@ -72,9 +72,9 @@
         attribution: "© OpenStreetMap contributors",
       }).addTo(map);
 
-      let startMarker, endMarker;
+      let startMarker, endMarker, locationCircle;
       const polyline = L.polyline([], { color: "#004e92", weight: 6 }).addTo(map);
-      const filteredPolyline = L.polyline([], { color: "#32CD32", weight: 6 }); // Verde agradable para ruta filtrada
+      const filteredPolyline = L.polyline([], { color: "#32CD32", weight: 6 });
 
       // Configuración inicial de fechas
       const startDateTime = document.getElementById("startDateTime");
@@ -173,6 +173,7 @@
 
             if (startMarker) map.removeLayer(startMarker);
             if (endMarker) map.removeLayer(endMarker);
+            if (locationCircle) map.removeLayer(locationCircle);
 
             if (route.length > 1) {
               startMarker = L.marker(route[0], {
@@ -181,7 +182,9 @@
                   html: '<div style="color: black; font-weight: bold; background: #FFD700; padding: 8px; border-radius: 50%; text-align: center;">A</div>',
                   iconSize: [35, 35],
                 }),
-              }).addTo(map);
+              })
+                .bindPopup(`Inicio: ${data[0].timestamp}`)
+                .addTo(map);
 
               endMarker = L.marker(route[route.length - 1], {
                 icon: L.divIcon({
@@ -189,7 +192,9 @@
                   html: '<div style="color: white; font-weight: bold; background: #4B0082; padding: 8px; border-radius: 50%; text-align: center;">B</div>',
                   iconSize: [35, 35],
                 }),
-              }).addTo(map);
+              })
+                .bindPopup(`Fin: ${data[data.length - 1].timestamp}`)
+                .addTo(map);
             }
 
             map.fitBounds(polyline.getBounds());
@@ -284,6 +289,7 @@
 
             if (startMarker) map.removeLayer(startMarker);
             if (endMarker) map.removeLayer(endMarker);
+            if (locationCircle) map.removeLayer(locationCircle);
 
             if (route.length > 1) {
               startMarker = L.marker(route[0], {
@@ -292,7 +298,9 @@
                   html: '<div style="color: black; font-weight: bold; background: #FFD700; padding: 8px; border-radius: 50%; text-align: center;">A</div>',
                   iconSize: [35, 35],
                 }),
-              }).addTo(map);
+              })
+                .bindPopup(`Inicio: ${data[0].timestamp}`)
+                .addTo(map);
 
               endMarker = L.marker(route[route.length - 1], {
                 icon: L.divIcon({
@@ -300,8 +308,18 @@
                   html: '<div style="color: white; font-weight: bold; background: #4B0082; padding: 8px; border-radius: 50%; text-align: center;">B</div>',
                   iconSize: [35, 35],
                 }),
-              }).addTo(map);
+              })
+                .bindPopup(`Fin: ${data[data.length - 1].timestamp}`)
+                .addTo(map);
             }
+
+            // Dibujar círculo solo con contorno
+            locationCircle = L.circle([lat, lon], {
+              color: "#32CD32", // Verde igual que la polilínea
+              weight: 2, // Grosor del contorno
+              fill: false, // Sin relleno
+              radius: parseFloat(radius),
+            }).addTo(map);
 
             map.fitBounds(filteredPolyline.getBounds());
           })
