@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Consulta de Históricos</title>
+    <title id="page-title">Consulta de Históricos</title>
     <link rel="stylesheet" href="styles2.css" />
     <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
   
@@ -170,11 +170,11 @@
       }
 
       // Funciones de Geoapify
-      async function getApiKey() {
+      async function getConfig() {
         const response = await fetch('/api/config');
         if (!response.ok) throw new Error("Error al obtener la configuración");
         const config = await response.json();
-        return config.geoapifyApiKey;
+        return config;
       }
 
       async function fetchAutocomplete(query, city, apiKey) {
@@ -205,85 +205,97 @@
 
       // Inicialización
       document.addEventListener("DOMContentLoaded", async () => {
-        const apiKey = await getApiKey();
-        const locationInput = document.getElementById("location-input");
-        const suggestionsBox = document.getElementById("suggestions-box");
-        const citySelect = document.getElementById("city-select");
-        const radiusInput = document.getElementById("radius-input");
-
-        // Autocompletado
-        locationInput.addEventListener("input", async () => {
-          const query = locationInput.value;
-          const city = citySelect.value;
-          if (query.length < 7) {
-            suggestionsBox.style.display = "none";
-            return;
+        try {
+          const config = await getConfig();
+          const apiKey = config.geoapifyApiKey;
+          
+          // Actualizar el título de la página con el valor de APP_TITLE
+          if (config.pageTitle) {
+            document.getElementById('page-title').textContent = config.pageTitle || "Consulta de Históricos";
           }
+          
+          // Resto del código existente...
+          const locationInput = document.getElementById("location-input");
+          const suggestionsBox = document.getElementById("suggestions-box");
+          const citySelect = document.getElementById("city-select");
+          const radiusInput = document.getElementById("radius-input");
 
-          const suggestions = await fetchAutocomplete(query, city, apiKey);
-          suggestionsBox.innerHTML = "";
-          suggestions.forEach((suggestion, index) => {
-            const div = document.createElement("div");
-            div.className = "suggestion-item";
-            div.textContent = suggestion.label;
-            div.dataset.index = index;
-            div.addEventListener("click", () => {
-              locationInput.value = suggestion.label;
+          // Autocompletado
+          locationInput.addEventListener("input", async () => {
+            const query = locationInput.value;
+            const city = citySelect.value;
+            if (query.length < 7) {
               suggestionsBox.style.display = "none";
+              return;
+            }
+
+            const suggestions = await fetchAutocomplete(query, city, apiKey);
+            suggestionsBox.innerHTML = "";
+            suggestions.forEach((suggestion, index) => {
+              const div = document.createElement("div");
+              div.className = "suggestion-item";
+              div.textContent = suggestion.label;
+              div.dataset.index = index;
+              div.addEventListener("click", () => {
+                locationInput.value = suggestion.label;
+                suggestionsBox.style.display = "none";
+              });
+              suggestionsBox.appendChild(div);
             });
-            suggestionsBox.appendChild(div);
+            suggestionsBox.style.display = suggestions.length > 0 ? "block" : "none";
           });
-          suggestionsBox.style.display = suggestions.length > 0 ? "block" : "none";
-        });
 
-        // Ocultar sugerencias al perder foco (opcional)
-        locationInput.addEventListener("blur", () => {
-          setTimeout(() => (suggestionsBox.style.display = "none"), 200);
-        });
+          // Ocultar sugerencias al perder foco (opcional)
+          locationInput.addEventListener("blur", () => {
+            setTimeout(() => (suggestionsBox.style.display = "none"), 200);
+          });
 
-        // Consultar coordenadas al hacer clic en "Ubicación Específica"
-        consultButton.addEventListener("click", async () => {
-          const address = locationInput.value;
-          const city = citySelect.value;
-          const radius = radiusInput.value;
+          // Consultar coordenadas al hacer clic en "Ubicación Específica"
+          consultButton.addEventListener("click", async () => {
+            const address = locationInput.value;
+            const city = citySelect.value;
+            const radius = radiusInput.value;
 
-          if (!address || !radius) {
-            alert("Por favor, ingrese una ubicación y un radio.");
-            return;
-          }
+            if (!address || !radius) {
+              alert("Por favor, ingrese una ubicación y un radio.");
+              return;
+            }
 
-          const coords = await fetchCoordinates(address, city, apiKey);
-          if (coords) {
-            const { lat, lon } = coords;
-            console.log(`Coordenadas obtenidas: lat=${lat}, lng=${lon}`);
+            const coords = await fetchCoordinates(address, city, apiKey);
+            if (coords) {
+              const { lat, lon } = coords;
+              console.log(`Coordenadas obtenidas: lat=${lat}, lng=${lon}`);
 
-            // Mostrar marcador y círculo
-            if (window.locationMarker) map.removeLayer(window.locationMarker);
-            if (window.locationCircle) map.removeLayer(window.locationCircle);
+              // Mostrar marcador y círculo
+              if (window.locationMarker) map.removeLayer(window.locationMarker);
+              if (window.locationCircle) map.removeLayer(window.locationCircle);
 
-            window.locationMarker = L.marker([lat, lon])
-              .addTo(map)
-              .bindPopup(`Ubicación: ${address}<br>Radio: ${radius}m`)
-              .openPopup();
+              window.locationMarker = L.marker([lat, lon])
+                .addTo(map)
+                .bindPopup(`Ubicación: ${address}<br>Radio: ${radius}m`)
+                .openPopup();
 
-            window.locationCircle = L.circle([lat, lon], {
-              color: "blue",
-              fillColor: "#add8e6",
-              fillOpacity: 0.3,
-              radius: parseFloat(radius),
-            }).addTo(map);
+              window.locationCircle = L.circle([lat, lon], {
+                color: "blue",
+                fillColor: "#add8e6",
+                fillOpacity: 0.3,
+                radius: parseFloat(radius),
+              }).addTo(map);
 
-            map.setView([lat, lon], 14);
-          } else {
-            alert("Ubicación no encontrada.");
-          }
-        });
+              map.setView([lat, lon], 14);
+            } else {
+              alert("Ubicación no encontrada.");
+            }
+          });
 
-        // Resto de la inicialización
-        generarElementosDecorativos();
-        startDateTime.addEventListener("input", actualizarRestricciones);
-        endDateTime.addEventListener("input", actualizarRestricciones);
-        inhabilitarBoton();
+          // Resto de la inicialización
+          generarElementosDecorativos();
+          startDateTime.addEventListener("input", actualizarRestricciones);
+          endDateTime.addEventListener("input", actualizarRestricciones);
+          inhabilitarBoton();
+        } catch (error) {
+          console.error("Error al cargar la configuración:", error);
+        }
       });
     </script>
   </body>

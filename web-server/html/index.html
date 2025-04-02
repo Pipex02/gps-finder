@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Geo Finder</title>
+    <title id="page-title">Geo Finder</title>
     <link rel="stylesheet" href="styles1.css">
     <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
 </head>
@@ -43,6 +43,27 @@
 
     <!-- Scripts de Leaflet y API -->
     <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+    <script>
+        async function getConfig() {
+            const response = await fetch('/api/config');
+            if (!response.ok) throw new Error("Error al obtener la configuración");
+            const config = await response.json();
+            return config;
+        }
+
+        document.addEventListener("DOMContentLoaded", async () => {
+            try {
+                const config = await getConfig();
+                
+                // Actualizar el título de la página con el valor de APP_TITLE
+                if (config.pageTitle) {
+                    document.getElementById('page-title').textContent = config.pageTitle || "Geo Finder";
+                }
+            } catch (error) {
+                console.error("Error al cargar la configuración:", error);
+            }
+        });
+    </script>
     <script>
         var map = L.map('map').setView([0, 0], 2); // Mapa inicial
 
