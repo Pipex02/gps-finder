@@ -110,20 +110,33 @@ app.get("/api/check-location-with-historic-time", (req, res) => {
     const lng = parseFloat(lngStr);
     const radius = parseFloat(radiusStr);
 
-    // Validar que los parámetros sean numéricos
+    // Validar parámetros
     if (isNaN(lat) || isNaN(lng) || isNaN(radius) || !inicio || !fin) {
         return res.status(400).json({ error: "Parámetros inválidos" });
     }
 
-    // Convertir fechas a formato MySQL
+    // Validar fechas
     const inicioDate = new Date(inicio);
     const finDate = new Date(fin);
+    if (isNaN(inicioDate) || isNaN(finDate)) {
+        return res.status(400).json({ error: "Fechas inválidas" });
+    }
+
+    // Formatear fechas para MySQL
     const inicioFormatted = inicioDate.toISOString().slice(0, 19).replace('T', ' ');
     const finFormatted = finDate.toISOString().slice(0, 19).replace('T', ' ');
 
-  
+    // Calcular límites geográficos
+    const radiusKM = radius / 1000; // Radio en kilómetros
+    const latRad = lat * (Math.PI / 180);
+    const deltaLon = Math.asin(Math.sin(radiusKM / 6371) / Math.cos(latRad)) * (180 / Math.PI);
 
+    const latMin = lat - (radiusKM / 111.32);
+    const latMax = lat + (radiusKM / 111.32);
+    const lngMin = lng - deltaLon;
+    const lngMax = lng + deltaLon;
 
+    // Consulta SQL
     const query = `
         SELECT latitud, longitud, timestamp 
         FROM coordenadas 
@@ -134,10 +147,10 @@ app.get("/api/check-location-with-historic-time", (req, res) => {
     `;
 
     const values = [
-            latMin, latMax,
-            lngMin, lngMax,
-            inicioFormatted,
-            finFormatted
+        latMin, latMax,
+        lngMin, lngMax,
+        inicioFormatted,
+        finFormatted
     ];
 
     db.query(query, values, (err, results) => {
@@ -146,7 +159,6 @@ app.get("/api/check-location-with-historic-time", (req, res) => {
             return res.status(500).json({ error: "Error interno" });
         }
 
-        // Respuesta con datos y estado
         const hasVisited = results.length > 0;
         res.json({
             visited: hasVisited,
