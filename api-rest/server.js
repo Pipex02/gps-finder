@@ -26,7 +26,7 @@ db.connect((err) => {
     console.log("✅ Conectado a MySQL en RDS");
 });
 
-// Ruta para obtener la última coordenada a traves de la API REST
+// Ruta para obtener la última coordenada a través de la API REST
 app.get("/coordenadas", (req, res) => {
     const query = "SELECT latitud, longitud, timestamp FROM coordenadas ORDER BY id DESC LIMIT 1";
 
@@ -49,7 +49,7 @@ app.get("/coordenadas", (req, res) => {
     });
 });
 
-// Nueva ruta para obtener datos históricos entre dos fechas
+// Ruta para obtener datos históricos entre dos fechas
 app.get("/historicos", (req, res) => {
     const { inicio, fin } = req.query;
     
@@ -90,6 +90,41 @@ app.get("/config", (req, res) => {
     }
 
     res.json(config);
+});
+
+// NUEVA RUTA: Obtener coordenadas dentro de un radio y en un rango de fechas
+app.get("/lugar", (req, res) => {
+    const { latitud, longitud, radio, inicio, fin } = req.query;
+
+    if (!latitud || !longitud || !radio || !inicio || !fin) {
+        return res.status(400).json({ error: "Faltan parámetros requeridos (latitud, longitud, radio, inicio, fin)." });
+    }
+
+    const query = `
+        SELECT latitud, longitud, timestamp,
+               (6371000 * ACOS(
+                   COS(RADIANS(?)) * COS(RADIANS(latitud)) * 
+                   COS(RADIANS(longitud) - RADIANS(?)) + 
+                   SIN(RADIANS(?)) * SIN(RADIANS(latitud))
+               )) AS distancia
+        FROM coordenadas
+        WHERE timestamp BETWEEN ? AND ?
+        HAVING distancia <= ?
+        ORDER BY timestamp ASC
+    `;
+
+    db.query(query, [latitud, longitud, latitud, inicio, fin, radio], (err, results) => {
+        if (err) {
+            console.error("❌ Error al obtener datos de la ubicación:", err);
+            res.status(500).json({ error: "Error al obtener datos de la ubicación" });
+        } else {
+            res.json(results.map(row => ({
+                latitud: parseFloat(row.latitud).toFixed(5),
+                longitud: parseFloat(row.longitud).toFixed(5),
+                timestamp: row.timestamp
+            })));
+        }
+    });
 });
 
 // Iniciar el servidor
