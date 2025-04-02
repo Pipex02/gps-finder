@@ -100,18 +100,18 @@ app.get("/historicos", (req, res) => {
 // Nueva ruta para verificar ubicación con radio y fechas del histórico
 app.get("/api/check-location-with-historic-time", (req, res) => {
     const latStr = req.query.lat;
-    const lngStr = req.query.lng;
+    const lonStr = req.query.lng;
     const radiusStr = req.query.radius;
     const inicio = req.query.inicio;
     const fin = req.query.fin;
 
     // Convertir a números
-    const lat = parseFloat(latStr);
-    const lng = parseFloat(lngStr);
+    const lat = parseFloat(row.latitud).toFixed(5);
+    const lon = parseFloat(row.longitud).toFixed(5);
     const radius = parseFloat(radiusStr);
 
     // Validar parámetros
-    if (isNaN(lat) || isNaN(lng) || isNaN(radius) || !inicio || !fin) {
+    if (isNaN(lat) || isNaN(lon) || isNaN(radius) || !inicio || !fin) {
         return res.status(400).json({ error: "Parámetros inválidos" });
     }
 
@@ -133,8 +133,8 @@ app.get("/api/check-location-with-historic-time", (req, res) => {
 
     const latMin = lat - (radiusKM / 111.32);
     const latMax = lat + (radiusKM / 111.32);
-    const lngMin = lng - deltaLon;
-    const lngMax = lng + deltaLon;
+    const lngMin = lon - deltaLon;
+    const lngMax = lon + deltaLon;
 
     // Consulta SQL
     const query = `
