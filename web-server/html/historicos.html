@@ -6,7 +6,6 @@
     <title id="page-title">Consulta de Históricos</title>
     <link rel="stylesheet" href="styles2.css" />
     <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
-  
   </head>
   <body>
     <header class="title-container">
@@ -26,7 +25,7 @@
           <h2>Fecha y hora de fin:</h2>
           <input type="datetime-local" id="endDateTime" />
           <br /><br />
-         
+
           <div class="button-container">
             <button class="button" onclick="consultar()">Consultar</button>
             <h2>Ciudad:</h2>
@@ -38,10 +37,22 @@
               <option value="Cartagena">Cartagena</option>
             </select>
             <br /><br />
-            <input type="text" id="location-input" placeholder="Ingrese ubicación" />
+            <input
+              type="text"
+              id="location-input"
+              placeholder="Ingrese ubicación"
+            />
             <div id="suggestions-box" class="suggestions"></div>
-            <input type="number" id="radius-input" placeholder="Radio (m)" min="50" max="5000" />
-            <button id="consult-button" class="button" disabled>Consultar Ubicación Específica</button>
+            <input
+              type="number"
+              id="radius-input"
+              placeholder="Radio (m)"
+              min="50"
+              max="5000"
+            />
+            <button id="consult-button" class="button" disabled>
+              Consultar Ubicación Específica
+            </button>
           </div>
         </section>
       </div>
@@ -69,23 +80,68 @@
       }
 
       // Inicializar el mapa
-      const map = L.map("map").setView([0, 0], 2);
+      const map = L.map("map").setView([10.99385, -74.79261], 12);
       L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
         attribution: "© OpenStreetMap contributors",
       }).addTo(map);
 
       let startMarker, endMarker;
-      const polyline = L.polyline([], { color: "#004e92", weight: 6 }).addTo(map);
+      const polyline = L.polyline([], { color: "#004e92", weight: 6 }).addTo(
+        map
+      );
 
       // Configuración inicial de fechas
       const startDateTime = document.getElementById("startDateTime");
       const endDateTime = document.getElementById("endDateTime");
       const consultButton = document.getElementById("consult-button");
 
-      const minDate = new Date("2025-03-25T10:00:00-05:00");
-      startDateTime.min = minDate.toISOString().slice(0, 16);
-      startDateTime.value = minDate.toISOString().slice(0, 16);
-      endDateTime.min = startDateTime.value;
+      const minDate = new Date("2025-03-25T00:00:00"); // Fecha mínima global
+      const today = new Date();
+      today.setHours(0, 0, 0, 0); // Hoy a las 00:00
+
+      const endOfDay = new Date();
+      endOfDay.setHours(23, 59, 0, 0); // Hoy a las 23:59
+
+      // Ajustar a la zona horaria local
+      const toLocalISOString = (date) => {
+        const offset = date.getTimezoneOffset() * 60000; // Offset en milisegundos
+        return new Date(date.getTime() - offset).toISOString().slice(0, 16);
+      };
+
+      // Aplicar restricciones
+      startDateTime.min = toLocalISOString(minDate); // No antes del 25 de marzo
+      startDateTime.max = toLocalISOString(today); // No después de hoy
+      startDateTime.value = toLocalISOString(today); // Hoy a las 00:00 por defecto
+
+      endDateTime.min = startDateTime.value; // No antes de la fecha de inicio
+      endDateTime.max = toLocalISOString(endOfDay); // No después de hoy
+      endDateTime.value = toLocalISOString(endOfDay); // Hoy a las 23:59 por defecto
+
+      // Actualizar restricciones al cambiar la fecha de inicio
+      startDateTime.addEventListener("change", () => {
+        const startValue = new Date(startDateTime.value);
+        endDateTime.min = toLocalISOString(startValue); // Fecha mínima para fin es la de inicio
+
+        // Si la fecha de fin es menor o igual a la de inicio, ajustarla
+        if (new Date(endDateTime.value) <= startValue) {
+          let adjustedEnd = new Date(startValue);
+          adjustedEnd.setMinutes(adjustedEnd.getMinutes() + 1); // Asegurar que sea al menos un minuto después
+          endDateTime.value = toLocalISOString(adjustedEnd);
+        }
+      });
+
+      // Restringir hora de fin al cambiar la fecha de fin
+      endDateTime.addEventListener("change", () => {
+        const startValue = new Date(startDateTime.value);
+        const endValue = new Date(endDateTime.value);
+
+        // No permitir que la fecha de fin sea igual o menor a la de inicio
+        if (endValue <= startValue) {
+          let adjustedEnd = new Date(startValue);
+          adjustedEnd.setMinutes(adjustedEnd.getMinutes() + 1); // Al menos 1 minuto después
+          endDateTime.value = toLocalISOString(adjustedEnd);
+        }
+      });
 
       // Funciones de control del botón
       const inhabilitarBoton = () => (consultButton.disabled = true);
@@ -100,6 +156,7 @@
             endDateTime.value = startValue;
           }
         }
+
         inhabilitarBoton();
       }
 
@@ -123,9 +180,14 @@
         const startFormatted = `${startInput.replace("T", " ")}:00`;
         const endFormatted = `${endInput.replace("T", " ")}:00`;
 
-        fetch(`/api/historicos?inicio=${encodeURIComponent(startFormatted)}&fin=${encodeURIComponent(endFormatted)}`)
+        fetch(
+          `/api/historicos?inicio=${encodeURIComponent(
+            startFormatted
+          )}&fin=${encodeURIComponent(endFormatted)}`
+        )
           .then((response) => {
-            if (!response.ok) throw new Error("Error en la respuesta de la API");
+            if (!response.ok)
+              throw new Error("Error en la respuesta de la API");
             return response.json();
           })
           .then((data) => {
@@ -135,7 +197,10 @@
               return;
             }
 
-            const route = data.map((coord) => [parseFloat(coord.latitud), parseFloat(coord.longitud)]);
+            const route = data.map((coord) => [
+              parseFloat(coord.latitud),
+              parseFloat(coord.longitud),
+            ]);
             polyline.setLatLngs(route);
 
             if (startMarker) map.removeLayer(startMarker);
@@ -171,7 +236,7 @@
 
       // Funciones de Geoapify
       async function getConfig() {
-        const response = await fetch('/api/config');
+        const response = await fetch("/api/config");
         if (!response.ok) throw new Error("Error al obtener la configuración");
         const config = await response.json();
         return config;
@@ -179,25 +244,29 @@
 
       async function fetchAutocomplete(query, city, apiKey) {
         const response = await fetch(
-          `https://api.geoapify.com/v1/geocode/autocomplete?text=${encodeURIComponent(query)}&city=${encodeURIComponent(city)}&limit=4&apiKey=${apiKey}`
+          `https://api.geoapify.com/v1/geocode/autocomplete?text=${encodeURIComponent(
+            query
+          )}&city=${encodeURIComponent(city)}&limit=4&apiKey=${apiKey}`
         );
         const data = await response.json();
-        return data.features.map(feature => ({
+        return data.features.map((feature) => ({
           label: feature.properties.formatted,
           lat: feature.properties.lat,
-          lon: feature.properties.lon
+          lon: feature.properties.lon,
         }));
       }
 
       async function fetchCoordinates(address, city, apiKey) {
         const response = await fetch(
-          `https://api.geoapify.com/v1/geocode/search?text=${encodeURIComponent(address)}&city=${encodeURIComponent(city)}&limit=1&apiKey=${apiKey}`
+          `https://api.geoapify.com/v1/geocode/search?text=${encodeURIComponent(
+            address
+          )}&city=${encodeURIComponent(city)}&limit=1&apiKey=${apiKey}`
         );
         const data = await response.json();
         if (data.features.length > 0) {
           return {
             lat: data.features[0].properties.lat,
-            lon: data.features[0].properties.lon
+            lon: data.features[0].properties.lon,
           };
         }
         return null;
@@ -208,12 +277,13 @@
         try {
           const config = await getConfig();
           const apiKey = config.geoapifyApiKey;
-          
+
           // Actualizar el título de la página con el valor de APP_TITLE
           if (config.pageTitle) {
-            document.getElementById('page-title').textContent = config.pageTitle || "Consulta de Históricos";
+            document.getElementById("page-title").textContent =
+              config.pageTitle || "Consulta de Históricos";
           }
-          
+
           // Resto del código existente...
           const locationInput = document.getElementById("location-input");
           const suggestionsBox = document.getElementById("suggestions-box");
@@ -242,7 +312,8 @@
               });
               suggestionsBox.appendChild(div);
             });
-            suggestionsBox.style.display = suggestions.length > 0 ? "block" : "none";
+            suggestionsBox.style.display =
+              suggestions.length > 0 ? "block" : "none";
           });
 
           // Ocultar sugerencias al perder foco (opcional)
