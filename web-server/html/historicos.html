@@ -25,7 +25,6 @@
           <h2>Fecha y hora de fin:</h2>
           <input type="datetime-local" id="endDateTime" />
           <br /><br />
-
           <div class="button-container">
             <button class="button" onclick="consultar()">Consultar</button>
             <h2>Ciudad:</h2>
@@ -37,22 +36,10 @@
               <option value="Cartagena">Cartagena</option>
             </select>
             <br /><br />
-            <input
-              type="text"
-              id="location-input"
-              placeholder="Ingrese ubicación"
-            />
+            <input type="text" id="location-input" placeholder="Ingrese ubicación" />
             <div id="suggestions-box" class="suggestions"></div>
-            <input
-              type="number"
-              id="radius-input"
-              placeholder="Radio (m)"
-              min="50"
-              max="5000"
-            />
-            <button id="consult-button" class="button" disabled>
-              Consultar Ubicación Específica
-            </button>
+            <input type="number" id="radius-input" placeholder="Radio (m)" min="10" max="5000" />
+            <button id="consult-button" class="button" disabled>Consultar Ubicación Específica</button>
           </div>
         </section>
       </div>
@@ -86,59 +73,48 @@
       }).addTo(map);
 
       let startMarker, endMarker;
-      const polyline = L.polyline([], { color: "#004e92", weight: 6 }).addTo(
-        map
-      );
+      const polyline = L.polyline([], { color: "#004e92", weight: 6 }).addTo(map);
+      const filteredPolyline = L.polyline([], { color: "#32CD32", weight: 6 }); // Verde agradable para ruta filtrada
 
       // Configuración inicial de fechas
       const startDateTime = document.getElementById("startDateTime");
       const endDateTime = document.getElementById("endDateTime");
       const consultButton = document.getElementById("consult-button");
 
-      const minDate = new Date("2025-03-25T00:00:00"); // Fecha mínima global
+      const minDate = new Date("2025-03-25T00:00:00");
       const today = new Date();
-      today.setHours(0, 0, 0, 0); // Hoy a las 00:00
-
+      today.setHours(0, 0, 0, 0);
       const endOfDay = new Date();
-      endOfDay.setHours(23, 59, 0, 0); // Hoy a las 23:59
+      endOfDay.setHours(23, 59, 0, 0);
 
-      // Ajustar a la zona horaria local
       const toLocalISOString = (date) => {
-        const offset = date.getTimezoneOffset() * 60000; // Offset en milisegundos
+        const offset = date.getTimezoneOffset() * 60000;
         return new Date(date.getTime() - offset).toISOString().slice(0, 16);
       };
 
-      // Aplicar restricciones
-      startDateTime.min = toLocalISOString(minDate); // No antes del 25 de marzo
-      startDateTime.max = toLocalISOString(today); // No después de hoy
-      startDateTime.value = toLocalISOString(today); // Hoy a las 00:00 por defecto
+      startDateTime.min = toLocalISOString(minDate);
+      startDateTime.max = toLocalISOString(today);
+      startDateTime.value = toLocalISOString(today);
+      endDateTime.min = startDateTime.value;
+      endDateTime.max = toLocalISOString(endOfDay);
+      endDateTime.value = toLocalISOString(endOfDay);
 
-      endDateTime.min = startDateTime.value; // No antes de la fecha de inicio
-      endDateTime.max = toLocalISOString(endOfDay); // No después de hoy
-      endDateTime.value = toLocalISOString(endOfDay); // Hoy a las 23:59 por defecto
-
-      // Actualizar restricciones al cambiar la fecha de inicio
       startDateTime.addEventListener("change", () => {
         const startValue = new Date(startDateTime.value);
-        endDateTime.min = toLocalISOString(startValue); // Fecha mínima para fin es la de inicio
-
-        // Si la fecha de fin es menor o igual a la de inicio, ajustarla
+        endDateTime.min = toLocalISOString(startValue);
         if (new Date(endDateTime.value) <= startValue) {
           let adjustedEnd = new Date(startValue);
-          adjustedEnd.setMinutes(adjustedEnd.getMinutes() + 1); // Asegurar que sea al menos un minuto después
+          adjustedEnd.setMinutes(adjustedEnd.getMinutes() + 1);
           endDateTime.value = toLocalISOString(adjustedEnd);
         }
       });
 
-      // Restringir hora de fin al cambiar la fecha de fin
       endDateTime.addEventListener("change", () => {
         const startValue = new Date(startDateTime.value);
         const endValue = new Date(endDateTime.value);
-
-        // No permitir que la fecha de fin sea igual o menor a la de inicio
         if (endValue <= startValue) {
           let adjustedEnd = new Date(startValue);
-          adjustedEnd.setMinutes(adjustedEnd.getMinutes() + 1); // Al menos 1 minuto después
+          adjustedEnd.setMinutes(adjustedEnd.getMinutes() + 1);
           endDateTime.value = toLocalISOString(adjustedEnd);
         }
       });
@@ -156,7 +132,6 @@
             endDateTime.value = startValue;
           }
         }
-
         inhabilitarBoton();
       }
 
@@ -180,14 +155,9 @@
         const startFormatted = `${startInput.replace("T", " ")}:00`;
         const endFormatted = `${endInput.replace("T", " ")}:00`;
 
-        fetch(
-          `/api/historicos?inicio=${encodeURIComponent(
-            startFormatted
-          )}&fin=${encodeURIComponent(endFormatted)}`
-        )
+        fetch(`/api/historicos?inicio=${encodeURIComponent(startFormatted)}&fin=${encodeURIComponent(endFormatted)}`)
           .then((response) => {
-            if (!response.ok)
-              throw new Error("Error en la respuesta de la API");
+            if (!response.ok) throw new Error("Error en la respuesta de la API");
             return response.json();
           })
           .then((data) => {
@@ -197,11 +167,9 @@
               return;
             }
 
-            const route = data.map((coord) => [
-              parseFloat(coord.latitud),
-              parseFloat(coord.longitud),
-            ]);
+            const route = data.map((coord) => [parseFloat(coord.latitud), parseFloat(coord.longitud)]);
             polyline.setLatLngs(route);
+            if (!map.hasLayer(polyline)) polyline.addTo(map);
 
             if (startMarker) map.removeLayer(startMarker);
             if (endMarker) map.removeLayer(endMarker);
@@ -244,9 +212,7 @@
 
       async function fetchAutocomplete(query, city, apiKey) {
         const response = await fetch(
-          `https://api.geoapify.com/v1/geocode/autocomplete?text=${encodeURIComponent(
-            query
-          )}&city=${encodeURIComponent(city)}&limit=4&apiKey=${apiKey}`
+          `https://api.geoapify.com/v1/geocode/autocomplete?text=${encodeURIComponent(query)}&city=${encodeURIComponent(city)}&limit=4&apiKey=${apiKey}`
         );
         const data = await response.json();
         return data.features.map((feature) => ({
@@ -258,9 +224,7 @@
 
       async function fetchCoordinates(address, city, apiKey) {
         const response = await fetch(
-          `https://api.geoapify.com/v1/geocode/search?text=${encodeURIComponent(
-            address
-          )}&city=${encodeURIComponent(city)}&limit=1&apiKey=${apiKey}`
+          `https://api.geoapify.com/v1/geocode/search?text=${encodeURIComponent(address)}&city=${encodeURIComponent(city)}&limit=1&apiKey=${apiKey}`
         );
         const data = await response.json();
         if (data.features.length > 0) {
@@ -272,6 +236,81 @@
         return null;
       }
 
+      // Nueva función para consultar ubicaciones dentro del radio
+      async function consultarUbicacionEspecifica() {
+        const address = document.getElementById("location-input").value;
+        const city = document.getElementById("city-select").value;
+        const radius = document.getElementById("radius-input").value;
+        const config = await getConfig();
+        const apiKey = config.geoapifyApiKey;
+
+        if (!address || !radius) {
+          alert("Por favor, ingrese una ubicación y un radio.");
+          return;
+        }
+
+        const coords = await fetchCoordinates(address, city, apiKey);
+        if (!coords) {
+          alert("Ubicación no encontrada.");
+          return;
+        }
+
+        const { lat, lon } = coords;
+        const startInput = startDateTime.value;
+        const endInput = endDateTime.value;
+
+        if (!startInput || !endInput) {
+          alert("Selecciona ambas fechas y horas.");
+          return;
+        }
+
+        const startFormatted = `${startInput.replace("T", " ")}:00`;
+        const endFormatted = `${endInput.replace("T", " ")}:00`;
+
+        fetch(`/api/lugar?latitud=${lat}&longitud=${lon}&radio=${radius}&inicio=${encodeURIComponent(startFormatted)}&fin=${encodeURIComponent(endFormatted)}`)
+          .then((response) => {
+            if (!response.ok) throw new Error("Error en la respuesta de la API");
+            return response.json();
+          })
+          .then((data) => {
+            if (!data || data.length === 0) {
+              alert("No hay datos en este rango de tiempo dentro del radio seleccionado.");
+              return;
+            }
+
+            const route = data.map((coord) => [parseFloat(coord.latitud), parseFloat(coord.longitud)]);
+            filteredPolyline.setLatLngs(route);
+            if (!map.hasLayer(filteredPolyline)) filteredPolyline.addTo(map);
+
+            if (startMarker) map.removeLayer(startMarker);
+            if (endMarker) map.removeLayer(endMarker);
+
+            if (route.length > 1) {
+              startMarker = L.marker(route[0], {
+                icon: L.divIcon({
+                  className: "custom-marker",
+                  html: '<div style="color: black; font-weight: bold; background: #FFD700; padding: 8px; border-radius: 50%; text-align: center;">A</div>',
+                  iconSize: [35, 35],
+                }),
+              }).addTo(map);
+
+              endMarker = L.marker(route[route.length - 1], {
+                icon: L.divIcon({
+                  className: "custom-marker",
+                  html: '<div style="color: white; font-weight: bold; background: #4B0082; padding: 8px; border-radius: 50%; text-align: center;">B</div>',
+                  iconSize: [35, 35],
+                }),
+              }).addTo(map);
+            }
+
+            map.fitBounds(filteredPolyline.getBounds());
+          })
+          .catch((error) => {
+            console.error("Error al obtener datos de ubicación:", error);
+            alert("Error al consultar la API. Intenta de nuevo.");
+          });
+      }
+
       // Inicialización
       document.addEventListener("DOMContentLoaded", async () => {
         try {
@@ -280,11 +319,9 @@
 
           // Actualizar el título de la página con el valor de APP_TITLE
           if (config.pageTitle) {
-            document.getElementById("page-title").textContent =
-              config.pageTitle || "Consulta de Históricos";
+            document.getElementById("page-title").textContent = config.pageTitle || "Consulta de Históricos";
           }
 
-          // Resto del código existente...
           const locationInput = document.getElementById("location-input");
           const suggestionsBox = document.getElementById("suggestions-box");
           const citySelect = document.getElementById("city-select");
@@ -312,54 +349,16 @@
               });
               suggestionsBox.appendChild(div);
             });
-            suggestionsBox.style.display =
-              suggestions.length > 0 ? "block" : "none";
+            suggestionsBox.style.display = suggestions.length > 0 ? "block" : "none";
           });
 
-          // Ocultar sugerencias al perder foco (opcional)
           locationInput.addEventListener("blur", () => {
             setTimeout(() => (suggestionsBox.style.display = "none"), 200);
           });
 
-          // Consultar coordenadas al hacer clic en "Ubicación Específica"
-          consultButton.addEventListener("click", async () => {
-            const address = locationInput.value;
-            const city = citySelect.value;
-            const radius = radiusInput.value;
+          // Evento para consultar ubicación específica
+          consultButton.addEventListener("click", consultarUbicacionEspecifica);
 
-            if (!address || !radius) {
-              alert("Por favor, ingrese una ubicación y un radio.");
-              return;
-            }
-
-            const coords = await fetchCoordinates(address, city, apiKey);
-            if (coords) {
-              const { lat, lon } = coords;
-              console.log(`Coordenadas obtenidas: lat=${lat}, lng=${lon}`);
-
-              // Mostrar marcador y círculo
-              if (window.locationMarker) map.removeLayer(window.locationMarker);
-              if (window.locationCircle) map.removeLayer(window.locationCircle);
-
-              window.locationMarker = L.marker([lat, lon])
-                .addTo(map)
-                .bindPopup(`Ubicación: ${address}<br>Radio: ${radius}m`)
-                .openPopup();
-
-              window.locationCircle = L.circle([lat, lon], {
-                color: "blue",
-                fillColor: "#add8e6",
-                fillOpacity: 0.3,
-                radius: parseFloat(radius),
-              }).addTo(map);
-
-              map.setView([lat, lon], 14);
-            } else {
-              alert("Ubicación no encontrada.");
-            }
-          });
-
-          // Resto de la inicialización
           generarElementosDecorativos();
           startDateTime.addEventListener("input", actualizarRestricciones);
           endDateTime.addEventListener("input", actualizarRestricciones);
