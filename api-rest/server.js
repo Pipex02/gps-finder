@@ -99,23 +99,31 @@ app.get("/historicos", (req, res) => {
 
 // Nueva ruta para verificar ubicación con radio y fechas del histórico
 app.get("/api/check-location-with-historic-time", (req, res) => {
-    const { lat, lng, radius, inicio, fin } = req.query;
+    const latStr = req.query.lat;
+    const lngStr = req.query.lng;
+    const radiusStr = req.query.radius;
+    const inicio = req.query.inicio;
+    const fin = req.query.fin;
 
-    // Validar parámetros
-    if (!lat || !lng || !radius || !inicio || !fin) {
-        return res.status(400).json({ error: "Faltan parámetros" });
+    // Convertir a números
+    const lat = parseFloat(latStr);
+    const lng = parseFloat(lngStr);
+    const radius = parseFloat(radiusStr);
+
+    // Validar que los parámetros sean numéricos
+    if (isNaN(lat) || isNaN(lng) || isNaN(radius) || !inicio || !fin) {
+        return res.status(400).json({ error: "Parámetros inválidos" });
     }
 
-    // Convertir radio a kilómetros (para la consulta)
-    const radiusKM = radius / 1000;
+    // Convertir fechas a formato MySQL
+    const inicioDate = new Date(inicio);
+    const finDate = new Date(fin);
+    const inicioFormatted = inicioDate.toISOString().slice(0, 19).replace('T', ' ');
+    const finFormatted = finDate.toISOString().slice(0, 19).replace('T', ' ');
 
-    // Calcular límites geográficos del radio (simplificado)
-    const latMin = lat - radiusKM / 111.32; // ~1 grado ≈ 111 km
-    const latMax = lat + radiusKM / 111.32;
-    const lngMin = lng - (radiusKM / (111.32 * Math.cos(lat * Math.PI / 180)));
-    const lngMax = lng + (radiusKM / (111.32 * Math.cos(lat * Math.PI / 180)));
+  
 
-    // Consulta SQL para verificar visitas dentro del radio y fechas
+
     const query = `
         SELECT latitud, longitud, timestamp 
         FROM coordenadas 
@@ -126,10 +134,10 @@ app.get("/api/check-location-with-historic-time", (req, res) => {
     `;
 
     const values = [
-        latMin, latMax,
-        lngMin, lngMax,
-        inicio,
-        fin
+            latMin, latMax,
+            lngMin, lngMax,
+            inicioFormatted,
+            finFormatted
     ];
 
     db.query(query, values, (err, results) => {
