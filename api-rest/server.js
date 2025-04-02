@@ -96,6 +96,61 @@ app.get("/historicos", (req, res) => {
     });
 });
 
+
+// Nueva ruta para verificar ubicación con radio y fechas del histórico
+app.post("/api/check-location-with-historic-time", (req, res) => {
+    const { lat, lng, radius, inicio, fin } = req.body;
+
+    // Validar parámetros
+    if (!lat || !lng || !radius || !inicio || !fin) {
+        return res.status(400).json({ error: "Faltan parámetros" });
+    }
+
+    // Convertir radio a kilómetros (para la consulta)
+    const radiusKM = radius / 1000;
+
+    // Calcular límites geográficos del radio (simplificado)
+    const latMin = lat - radiusKM / 111.32; // ~1 grado ≈ 111 km
+    const latMax = lat + radiusKM / 111.32;
+    const lngMin = lng - (radiusKM / (111.32 * Math.cos(lat * Math.PI / 180)));
+    const lngMax = lng + (radiusKM / (111.32 * Math.cos(lat * Math.PI / 180)));
+
+    // Consulta SQL para verificar visitas dentro del radio y fechas
+    const query = `
+        SELECT latitud, longitud, timestamp 
+        FROM coordenadas 
+        WHERE 
+            latitud BETWEEN ? AND ?
+            AND longitud BETWEEN ? AND ?
+            AND timestamp BETWEEN ? AND ?
+    `;
+
+    const values = [
+        latMin, latMax,
+        lngMin, lngMax,
+        inicio,
+        fin
+    ];
+
+    db.query(query, values, (err, results) => {
+        if (err) {
+            console.error("Error en la consulta:", err);
+            return res.status(500).json({ error: "Error interno" });
+        }
+
+        // Respuesta con datos y estado
+        const hasVisited = results.length > 0;
+        res.json({
+            visited: hasVisited,
+            visits: results,
+            message: hasVisited 
+                ? `Hubo ${results.length} visitas dentro del radio y período especificado.` 
+                : "No hubo visitas en ese rango."
+        });
+    });
+});
+
+
 // Ruta para obtener configuración de la API
 app.get("/config", (req, res) => {
     const config = {

@@ -82,6 +82,7 @@
       const endDateTime = document.getElementById("endDateTime");
       const consultButton = document.getElementById("consult-button");
 
+
       const minDate = new Date("2025-03-25T10:00:00-05:00");
       startDateTime.min = minDate.toISOString().slice(0, 16);
       startDateTime.value = minDate.toISOString().slice(0, 16);
@@ -255,11 +256,31 @@
             const address = locationInput.value;
             const city = citySelect.value;
             const radius = radiusInput.value;
+            const inicio = startDateTime.value; // Fecha de inicio del histórico
+            const fin = endDateTime.value;     // Fecha de fin del histórico
 
             if (!address || !radius) {
               alert("Por favor, ingrese una ubicación y un radio.");
               return;
             }
+            // Validar que las fechas estén seleccionadas
+            if (!inicio || !fin) {
+                alert("Selecciona las fechas del histórico.");
+                return;
+            }
+
+            // Enviar solicitud al nuevo endpoint
+            const response = await fetch('/api/check-location-with-historic-time', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    lat, 
+                    lng: lon, 
+                    radius: parseInt(radius), 
+                    inicio, 
+                    fin
+                })
+            });
 
             const coords = await fetchCoordinates(address, city, apiKey);
             if (coords) {
