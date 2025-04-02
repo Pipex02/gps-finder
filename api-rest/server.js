@@ -98,8 +98,8 @@ app.get("/historicos", (req, res) => {
 
 
 // Nueva ruta para verificar ubicación con radio y fechas del histórico
-app.post("/api/check-location-with-historic-time", (req, res) => {
-    const { lat, lng, radius, inicio, fin } = req.body;
+app.get("/api/check-location-with-historic-time", (req, res) => {
+    const { lat, lng, radius, inicio, fin } = req.query;
 
     // Validar parámetros
     if (!lat || !lng || !radius || !inicio || !fin) {
