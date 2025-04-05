@@ -78,8 +78,8 @@
       }).addTo(map);
 
       let startMarker, endMarker, locationCircle;
-      const polyline = L.polyline([], { color: "#004e92", weight: 6 }).addTo(map);
-      const filteredPolyline = L.polyline([], { color: "#32CD32", weight: 6 });
+      let allRoutes = []; // Almacena todas las rutas
+      let currentRouteIndex = 0; // Contador para identificar rutas
 
       // Configuración inicial de fechas
       const startDateTime = document.getElementById("startDateTime");
@@ -140,6 +140,89 @@
         inhabilitarBoton();
       }
 
+      // Función para dividir los datos en rutas con intervalo de 30 minutos
+      function splitIntoRoutes(data) {
+        const routes = [];
+        let currentRoute = [];
+        
+        data.forEach((point, index) => {
+          currentRoute.push(point);
+          
+          // Si no es el último punto, verifica el tiempo con el próximo
+          if (index < data.length - 1) {
+            const currentTimestamp = new Date(point.timestamp);
+            const nextTimestamp = new Date(data[index + 1].timestamp);
+            
+            // Calcula la diferencia en minutos
+            const timeDiff = (nextTimestamp - currentTimestamp) / (1000 * 60);
+            
+            if (timeDiff > 30) {
+              routes.push(currentRoute);
+              currentRoute = [];
+            }
+          }
+        });
+        
+        // Agrega la última ruta si hay datos
+        if (currentRoute.length > 0) routes.push(currentRoute);
+        
+        return routes;
+      }
+
+
+      // Función para generar colores aleatorios
+      function getRandomColor() {
+        const letters = '0123456789ABCDEF';
+        let color = '#';
+        for (let i = 0; i < 6; i++) {
+          color += letters[Math.floor(Math.random() * 16)];
+        }
+        return color;
+      }
+
+      // Función para actualizar el panel de control de rutas
+      function updateRouteControls() {
+        const controlsContainer = document.getElementById('route-controls');
+        controlsContainer.innerHTML = ''; // Limpiar controles anteriores
+
+        allRoutes.forEach(route => {
+          const checkbox = document.createElement('input');
+          checkbox.type = 'checkbox';
+          checkbox.id = route.id;
+          checkbox.checked = route.visible;
+          checkbox.addEventListener('change', () => {
+            toggleRouteVisibility(route.id, checkbox.checked);
+          });
+
+          const label = document.createElement('label');
+          label.htmlFor = route.id;
+          label.textContent = route.name;
+
+          const visitsCount = route.data.length;
+          const visitText = visitsCount === 1 ? 'visita' : 'visitas';
+          label.appendChild(document.createTextNode(` (${visitsCount} ${visitText})`));
+
+          controlsContainer.appendChild(checkbox);
+          controlsContainer.appendChild(label);
+          controlsContainer.appendChild(document.createElement('br'));
+        });
+      }
+
+      // Función para mostrar/ocultar una ruta
+      function toggleRouteVisibility(routeId, visible) {
+        const route = allRoutes.find(r => r.id === routeId);
+        if (route) {
+          if (visible) {
+            route.layer.addTo(map);
+          } else {
+            map.removeLayer(route.layer);
+          }
+          route.visible = visible;
+        }
+      }
+
+
+
       // Consultar la API de históricos
       function consultar() {
         const startInput = startDateTime.value;
@@ -172,45 +255,52 @@
               return;
             }
 
-            const route = data.map((coord) => [parseFloat(coord.latitud), parseFloat(coord.longitud)]);
-            polyline.setLatLngs(route);
-            if (!map.hasLayer(polyline)) polyline.addTo(map);
+            // Ordena los datos por timestamp (si no están ordenados)
+            data.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
 
-            if (startMarker) map.removeLayer(startMarker);
-            if (endMarker) map.removeLayer(endMarker);
-            if (locationCircle) map.removeLayer(locationCircle);
+            // Particiona los datos en rutas
+            const routes = splitIntoRoutes(data);
 
-            if (route.length > 1) {
-              startMarker = L.marker(route[0], {
-                icon: L.divIcon({
-                  className: "custom-marker",
-                  html: '<div style="color: black; font-weight: bold; background: #FFD700; padding: 8px; border-radius: 50%; text-align: center;">A</div>',
-                  iconSize: [35, 35],
-                }),
-              })
-                .bindPopup(`Inicio: ${data[0].timestamp}`)
-                .addTo(map);
+            // Elimina rutas anteriores del mapa
+            allRoutes.forEach(route => map.removeLayer(route.layer));
+            
+            // Reinicia el array de rutas
+            allRoutes = [];
 
-              endMarker = L.marker(route[route.length - 1], {
-                icon: L.divIcon({
-                  className: "custom-marker",
-                  html: '<div style="color: white; font-weight: bold; background: #4B0082; padding: 8px; border-radius: 50%; text-align: center;">B</div>',
-                  iconSize: [35, 35],
-                }),
-              })
-                .bindPopup(`Fin: ${data[data.length - 1].timestamp}`)
-                .addTo(map);
+            // Crea polilíneas para cada ruta
+            routes.forEach((routeData, index) => {
+              const routeId = `ruta-${++currentRouteIndex}`;
+              const routeName = `Ruta ${currentRouteIndex} (${new Date(routeData[0].timestamp).toLocaleString()} - ${new Date(routeData[routeData.length - 1].timestamp).toLocaleString()})`;
+              const routeLatLngs = routeData.map(coord => [coord.latitud, coord.longitud]);
+              
+              // Crea la polilínea con un color único
+              const polyline = L.polyline(routeLatLngs, {
+                color: getRandomColor(),
+                weight: 6,
+                opacity: 0.7
+              });
+
+              // Almacena la ruta
+              allRoutes.push({
+                id: routeId,
+                name: routeName,
+                layer: polyline,
+                data: routeData,
+                visible: true // Por defecto, visible
+              });
+            });
+
+            // Actualiza el control de rutas
+            updateRouteControls();
+
+            // Muestra la primera ruta por defecto
+            if (allRoutes.length > 0) {
+              allRoutes[0].layer.addTo(map);
+              map.fitBounds(allRoutes[0].layer.getBounds());
             }
 
-            map.fitBounds(polyline.getBounds());
             habilitarBoton();
-          })
-          .catch((error) => {
-            console.error("Error al obtener datos históricos:", error);
-            inhabilitarBoton();
-            alert("Error al consultar la API. Intenta de nuevo.");
           });
-      }
 
       // Funciones de Geoapify
       async function getConfig() {
@@ -288,49 +378,46 @@
               return;
             }
 
-            const route = data.map((coord) => [parseFloat(coord.latitud), parseFloat(coord.longitud)]);
-            filteredPolyline.setLatLngs(route);
-            if (!map.hasLayer(filteredPolyline)) filteredPolyline.addTo(map);
+            // Particiona los datos en rutas
+            const routes = splitIntoRoutes(data);
 
-            if (startMarker) map.removeLayer(startMarker);
-            if (endMarker) map.removeLayer(endMarker);
-            if (locationCircle) map.removeLayer(locationCircle);
+            // Elimina rutas anteriores del mapa
+            allRoutes.forEach(route => map.removeLayer(route.layer));
+            
+            // Reinicia el array de rutas
+            allRoutes = [];
 
-            if (route.length > 1) {
-              startMarker = L.marker(route[0], {
-                icon: L.divIcon({
-                  className: "custom-marker",
-                  html: '<div style="color: black; font-weight: bold; background: #FFD700; padding: 8px; border-radius: 50%; text-align: center;">A</div>',
-                  iconSize: [35, 35],
-                }),
-              })
-                .bindPopup(`Inicio: ${data[0].timestamp}`)
-                .addTo(map);
+            // Crea polilíneas para cada ruta
+            routes.forEach((routeData, index) => {
+              const routeId = `ruta-${++currentRouteIndex}`;
+              const routeName = `Ruta ${currentRouteIndex} (Ubicación Específica - ${address})`;
+              const routeLatLngs = routeData.map(coord => [coord.latitud, coord.longitud]);
+              
+              // Crea la polilínea con un color único
+              const polyline = L.polyline(routeLatLngs, {
+                color: getRandomColor(),
+                weight: 6,
+                opacity: 0.7
+              });
 
-              endMarker = L.marker(route[route.length - 1], {
-                icon: L.divIcon({
-                  className: "custom-marker",
-                  html: '<div style="color: white; font-weight: bold; background: #4B0082; padding: 8px; border-radius: 50%; text-align: center;">B</div>',
-                  iconSize: [35, 35],
-                }),
-              })
-                .bindPopup(`Fin: ${data[data.length - 1].timestamp}`)
-                .addTo(map);
+              // Almacena la ruta
+              allRoutes.push({
+                id: routeId,
+                name: routeName,
+                layer: polyline,
+                data: routeData,
+                visible: true // Por defecto, visible
+              });
+            });
+
+            // Actualiza el control de rutas
+            updateRouteControls();
+
+            // Muestra la primera ruta por defecto
+            if (allRoutes.length > 0) {
+              allRoutes[0].layer.addTo(map);
+              map.fitBounds(allRoutes[0].layer.getBounds());
             }
-
-            // Dibujar círculo solo con contorno
-            locationCircle = L.circle([lat, lon], {
-              color: "#32CD32", // Verde igual que la polilínea
-              weight: 2, // Grosor del contorno
-              fill: false, // Sin relleno
-              radius: parseFloat(radius),
-            }).addTo(map);
-
-            map.fitBounds(filteredPolyline.getBounds());
-          })
-          .catch((error) => {
-            console.error("Error al obtener datos de ubicación:", error);
-            alert("Error al consultar la API. Intenta de nuevo.");
           });
       }
 
