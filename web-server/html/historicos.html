@@ -25,6 +25,11 @@
           <h2>Fecha y hora de fin:</h2>
           <input type="datetime-local" id="endDateTime" />
           <br /><br />
+          <!-- Agrega este panel de control de rutas -->
+          <div class="route-control-container">
+            <h3>Rutas disponibles:</h3>
+            <div id="route-controls"></div>
+          </div>
           <div class="button-container">
             <button class="button" onclick="consultar()">Consultar</button>
             <h2>Ciudad:</h2>
@@ -81,7 +86,10 @@
       const endDateTime = document.getElementById("endDateTime");
       const consultButton = document.getElementById("consult-button");
 
+<<<<<<< HEAD
 
+=======
+>>>>>>> 2d53a78 (cambios iniciales, faltan mas)
       const minDate = new Date("2025-03-25T00:00:00");
       const today = new Date();
       today.setHours(0, 0, 0, 0);
@@ -375,6 +383,11 @@
             setTimeout(() => (suggestionsBox.style.display = "none"), 200);
           });
 
+<<<<<<< HEAD
+=======
+        
+
+>>>>>>> 2d53a78 (cambios iniciales, faltan mas)
           // Consultar coordenadas al hacer clic en "Ubicación Específica"
           consultButton.addEventListener("click", async () => {
             const address = locationInput.value;
