@@ -7,6 +7,16 @@
     <link rel="stylesheet" href="styles2.css" />
     <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
   </head>
+  <style>
+    #map-container {
+      height: 600px;
+      width: 100%;
+    }
+    #map {
+      width: 100%;
+      height: 100%;
+    }
+  </style>
   <body>
     <header class="title-container">
       <a href="index.html" id="back-button" class="button">Regresar</a>
@@ -337,6 +347,7 @@
 
             habilitarBoton();
           });
+      
 
       // Funciones de Geoapify
       async function getConfig() {
@@ -424,7 +435,7 @@
             data.forEach((route, index) => {
               const allPoints = data.flatMap(route => route); // Combinar todos los puntos
               const segments = splitInto10SecondSegments(allPoints);
-
+            
               // --- DIBUJAR CADA SEGMENTO CON COLOR ÚNICO ---
               const colorPalette = ['#FF0000', '#00FF00', '#0000FF', '#FFA500', '#8A2BE2', '#FFFF00', '#008000', '#000080'];
               segments.forEach((segment, index) => {
@@ -436,20 +447,24 @@
                   opacity: 0.8
                 }).addTo(map);
                 filteredPolylines.push(polyline);
+              }); // Cierre del bucle interno
             
-            });
-
+            }); // Cierre del bucle externo
+            
             // --- ACTUALIZAR CONTROLES DE SEGMENTOS ---
             updateSegmentControls();
-
+            
             // Actualiza el control de rutas
             updateRouteControls();
-
+            
             // Muestra la primera ruta por defecto
             if (allRoutes.length > 0) {
               allRoutes[0].layer.addTo(map);
               map.fitBounds(allRoutes[0].layer.getBounds());
             }
+          })
+          .catch((error) => {
+            console.error("Error al consultar ubicación específica:", error);
           });
         
       }
@@ -542,6 +557,7 @@
 
         return segments;
       }
+      
     </script>
   </body>
 </html>
