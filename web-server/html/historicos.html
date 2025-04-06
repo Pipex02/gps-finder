@@ -224,8 +224,10 @@
         });
       }
 
+
+
       // --- CONTROL DE VISIBILIDAD DE SEGMENTOS ---
-      function updateSegmentControls() {
+      function updateSegmentControls(segments) {
         const controlsContainer = document.getElementById('segment-controls');
         controlsContainer.innerHTML = '';
         segments.forEach((segment, index) => {
@@ -416,59 +418,52 @@
         const endFormatted = `${endInput.replace("T", " ")}:00`;
         let filteredPolylines = [];
 
+        const colorPalette = ['#FF0000', '#00FF00', '#0000FF', '#FFA500', '#8A2BE2', '#FFFF00'];
+
         fetch(`/api/lugar?latitud=${lat}&longitud=${lon}&radio=${radius}&inicio=${encodeURIComponent(startFormatted)}&fin=${encodeURIComponent(endFormatted)}`)
           .then((response) => {
             if (!response.ok) throw new Error("Error en la respuesta de la API");
             return response.json();
           })
           .then((data) => {
-            const allPoints = data.flatMap(route => route);
-            const segments = splitInto10SecondSegments(allPoints); // <--- DECLARAR segments
             if (!data || data.length === 0) {
-              alert("No hay datos en este rango de tiempo dentro del radio seleccionado.");
-              return;
-            }
+            alert("No hay datos en este rango de tiempo dentro del radio seleccionado.");
+            return;
+          }
 
-            // Limpiar polilíneas anteriores
-            filteredPolylines.forEach(polyline => map.removeLayer(polyline));
-            filteredPolylines = [];
+          // --- PROCESAR LOS DATOS EN SEGMENTOS DE 10 SEGUNDOS ---
+          const segments = splitInto10SecondSegments(data); // Usa tu función existente
 
-            // Dibujar cada ruta con un color distinto
-            const colors = ['#32CD32', '#FFD700', '#4B0082', '#FF0000', '#00FF00', '#0000FF'];
-            data.forEach((route, index) => {
-              const allPoints = data.flatMap(route => route); // Combinar todos los puntos
-              const segments = splitInto10SecondSegments(allPoints);
-            
-              // --- DIBUJAR CADA SEGMENTO CON COLOR ÚNICO ---
-              const colorPalette = ['#FF0000', '#00FF00', '#0000FF', '#FFA500', '#8A2BE2', '#FFFF00', '#008000', '#000080'];
-              segments.forEach((segment, index) => {
-                const coordinates = segment.map(p => [p.latitud, p.longitud]);
-                const color = colorPalette[index % colorPalette.length];
-                const polyline = L.polyline(coordinates, {
-                  color: color,
-                  weight: 6,
-                  opacity: 0.8
-                }).addTo(map);
-                filteredPolylines.push(polyline);
-              }); // Cierre del bucle interno
-            
-            }); // Cierre del bucle externo
-            
-            // --- ACTUALIZAR CONTROLES DE SEGMENTOS ---
-            updateSegmentControls();
-            
-            // Actualiza el control de rutas
-            updateRouteControls();
-            
-            // Muestra la primera ruta por defecto
-            if (allRoutes.length > 0) {
-              allRoutes[0].layer.addTo(map);
-              map.fitBounds(allRoutes[0].layer.getBounds());
-            }
+          // --- LIMPIAR POLILÍNEAS ANTIGUAS ---
+          filteredPolylines.forEach(polyline => map.removeLayer(polyline));
+          filteredPolylines = [];
+
+          // --- DIBUJAR CADA SEGMENTO CON COLOR ÚNICO ---
+          segments.forEach((segment, index) => {
+            const coordinates = segment.map(p => [p.latitud, p.longitud]);
+            const color = colorPalette[index % colorPalette.length];
+            const polyline = L.polyline(coordinates, {
+              color: color,
+              weight: 6,
+              opacity: 0.8
+            }).addTo(map);
+            filteredPolylines.push(polyline);
+          });
+
+          // --- ACTUALIZAR CONTROLES DE SEGMENTOS ---
+          updateSegmentControls(segments); // Pasar los segmentos como parámetro
+
+          // --- ADAPTACIONES PARA QUE NO AFECTE A LAS RUTAS EXISTENTES ---
+          if (allRoutes.length > 0) {
+            allRoutes[0].layer.addTo(map);
+            map.fitBounds(allRoutes[0].layer.getBounds());
+          }
+          habilitarBoton();
           })
           .catch((error) => {
             console.error("Error al consultar ubicación específica:", error);
-          });
+          }
+        );
         
       }
 
