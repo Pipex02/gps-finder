@@ -214,6 +214,36 @@
         });
       }
 
+      // --- CONTROL DE VISIBILIDAD DE SEGMENTOS ---
+      function updateSegmentControls() {
+        const controlsContainer = document.getElementById('segment-controls');
+        controlsContainer.innerHTML = '';
+        segments.forEach((segment, index) => {
+          const checkbox = document.createElement('input');
+          checkbox.type = 'checkbox';
+          checkbox.id = `segment-${index}`;
+          checkbox.checked = true;
+          checkbox.addEventListener('change', () => {
+            toggleSegmentVisibility(index, checkbox.checked);
+          });
+          const label = document.createElement('label');
+          label.htmlFor = `segment-${index}`;
+          label.textContent = `Segmento ${index + 1}`;
+          controlsContainer.appendChild(checkbox);
+          controlsContainer.appendChild(label);
+          controlsContainer.appendChild(document.createElement('br'));
+        });
+      }
+
+      function toggleSegmentVisibility(segmentIndex, visible) {
+        const polyline = filteredPolylines[segmentIndex];
+        if (visible) {
+          polyline.addTo(map);
+        } else {
+          map.removeLayer(polyline);
+        }
+      }
+
       // Función para mostrar/ocultar una ruta
       function toggleRouteVisibility(routeId, visible) {
         const route = allRoutes.find(r => r.id === routeId);
@@ -392,14 +422,25 @@
             // Dibujar cada ruta con un color distinto
             const colors = ['#32CD32', '#FFD700', '#4B0082', '#FF0000', '#00FF00', '#0000FF'];
             data.forEach((route, index) => {
-              const coordinates = route.map(p => [p.latitud, p.longitud]);
-              const polyline = L.polyline(coordinates, {
-                color: colors[index % colors.length],
-                weight: 6
-              }).addTo(map);
-              filteredPolylines.push(polyline);
+              const allPoints = data.flatMap(route => route); // Combinar todos los puntos
+              const segments = splitInto10SecondSegments(allPoints);
+
+              // --- DIBUJAR CADA SEGMENTO CON COLOR ÚNICO ---
+              const colorPalette = ['#FF0000', '#00FF00', '#0000FF', '#FFA500', '#8A2BE2', '#FFFF00', '#008000', '#000080'];
+              segments.forEach((segment, index) => {
+                const coordinates = segment.map(p => [p.latitud, p.longitud]);
+                const color = colorPalette[index % colorPalette.length];
+                const polyline = L.polyline(coordinates, {
+                  color: color,
+                  weight: 6,
+                  opacity: 0.8
+                }).addTo(map);
+                filteredPolylines.push(polyline);
             
             });
+
+            // --- ACTUALIZAR CONTROLES DE SEGMENTOS ---
+            updateSegmentControls();
 
             // Actualiza el control de rutas
             updateRouteControls();
@@ -469,6 +510,38 @@
           console.error("Error al cargar la configuración:", error);
         }
       });
+
+      // --- NUEVA FUNCIÓN PARA PROCESAR DATOS EN SEGMENTOS DE 10 SEGUNDOS ---
+      function splitInto10SecondSegments(data) {
+        const segments = [];
+        let currentSegment = [];
+        let prevTimestamp = null;
+
+        data.forEach((point, index) => {
+          if (index === 0) {
+            currentSegment = [point];
+            prevTimestamp = new Date(point.timestamp);
+            return;
+          }
+
+          const currentTs = new Date(point.timestamp);
+          const timeDiff = currentTs - prevTimestamp;
+
+          if (timeDiff > 10_000) { // 10 segundos en milisegundos
+            segments.push(currentSegment);
+            currentSegment = [point];
+          } else {
+            currentSegment.push(point);
+          }
+          prevTimestamp = currentTs;
+        });
+
+        if (currentSegment.length > 0) {
+          segments.push(currentSegment);
+        }
+
+        return segments;
+      }
     </script>
   </body>
 </html>
