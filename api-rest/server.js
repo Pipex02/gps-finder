@@ -185,7 +185,7 @@ app.get("/config", (req, res) => {
     res.json(config);
 });
 
-// NUEVA RUTA: Obtener coordenadas dentro de un radio y en un rango de fechas
+// NUEVA RUTA: Obtener coordenadas dentro de un radio y en un rango de fechas (MODIFICADA)
 app.get("/lugar", (req, res) => {
     const { latitud, longitud, radio, inicio, fin } = req.query;
 
@@ -210,13 +210,50 @@ app.get("/lugar", (req, res) => {
         if (err) {
             console.error("❌ Error al obtener datos de la ubicación:", err);
             res.status(500).json({ error: "Error al obtener datos de la ubicación" });
-        } else {
-            res.json(results.map(row => ({
-                latitud: parseFloat(row.latitud).toFixed(5),
-                longitud: parseFloat(row.longitud).toFixed(5),
-                timestamp: row.timestamp
-            })));
+            return;
         }
+
+        // Procesar los resultados para agrupar en rutas con diferencias >20 minutos
+        const points = results.map(row => ({
+            latitud: parseFloat(row.latitud).toFixed(5),
+            longitud: parseFloat(row.longitud).toFixed(5),
+            timestamp: row.timestamp
+        }));
+
+        const routes = [];
+        let currentRoute = [];
+        let previousTimestamp;
+
+        points.forEach((point, index) => {
+            if (index === 0) {
+                currentRoute = [point];
+                previousTimestamp = new Date(point.timestamp);
+                return;
+            }
+
+            const currentTimestamp = new Date(point.timestamp);
+            const timeDiff = currentTimestamp - previousTimestamp;
+
+            if (timeDiff > 20 * 60 * 1000) { // 20 minutos en milisegundos
+                routes.push(currentRoute);
+                currentRoute = [point];
+            } else {
+                currentRoute.push(point);
+            }
+            previousTimestamp = currentTimestamp;
+        });
+
+        // Agregar la última ruta
+        if (currentRoute.length > 0) {
+            routes.push(currentRoute);
+        }
+
+        // Devolver las rutas agrupadas
+        res.json(routes.map(route => route.map(p => ({
+            latitud: p.latitud,
+            longitud: p.longitud,
+            timestamp: p.timestamp
+        }))));
     });
 });
 

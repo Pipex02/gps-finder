@@ -81,15 +81,17 @@
       let allRoutes = []; // Almacena todas las rutas
       let currentRouteIndex = 0; // Contador para identificar rutas
 
+      // Declarar variables globales para las polilíneas
+      let polyline; // Para la ruta histórica principal
+      let filteredPolyline; // Para la ruta filtrada por ubicación y radio
+      let filteredPolylines = []; // Para múltiples rutas (si usas varias)
+
+
       // Configuración inicial de fechas
       const startDateTime = document.getElementById("startDateTime");
       const endDateTime = document.getElementById("endDateTime");
       const consultButton = document.getElementById("consult-button");
 
-<<<<<<< HEAD
-
-=======
->>>>>>> 2d53a78 (cambios iniciales, faltan mas)
       const minDate = new Date("2025-03-25T00:00:00");
       const today = new Date();
       today.setHours(0, 0, 0, 0);
@@ -370,6 +372,7 @@
 
         const startFormatted = `${startInput.replace("T", " ")}:00`;
         const endFormatted = `${endInput.replace("T", " ")}:00`;
+        let filteredPolylines = [];
 
         fetch(`/api/lugar?latitud=${lat}&longitud=${lon}&radio=${radius}&inicio=${encodeURIComponent(startFormatted)}&fin=${encodeURIComponent(endFormatted)}`)
           .then((response) => {
@@ -382,36 +385,20 @@
               return;
             }
 
-            // Particiona los datos en rutas
-            const routes = splitIntoRoutes(data);
+            // Limpiar polilíneas anteriores
+            filteredPolylines.forEach(polyline => map.removeLayer(polyline));
+            filteredPolylines = [];
 
-            // Elimina rutas anteriores del mapa
-            allRoutes.forEach(route => map.removeLayer(route.layer));
+            // Dibujar cada ruta con un color distinto
+            const colors = ['#32CD32', '#FFD700', '#4B0082', '#FF0000', '#00FF00', '#0000FF'];
+            data.forEach((route, index) => {
+              const coordinates = route.map(p => [p.latitud, p.longitud]);
+              const polyline = L.polyline(coordinates, {
+                color: colors[index % colors.length],
+                weight: 6
+              }).addTo(map);
+              filteredPolylines.push(polyline);
             
-            // Reinicia el array de rutas
-            allRoutes = [];
-
-            // Crea polilíneas para cada ruta
-            routes.forEach((routeData, index) => {
-              const routeId = `ruta-${++currentRouteIndex}`;
-              const routeName = `Ruta ${currentRouteIndex} (Ubicación Específica - ${address})`;
-              const routeLatLngs = routeData.map(coord => [coord.latitud, coord.longitud]);
-              
-              // Crea la polilínea con un color único
-              const polyline = L.polyline(routeLatLngs, {
-                color: getRandomColor(),
-                weight: 6,
-                opacity: 0.7
-              });
-
-              // Almacena la ruta
-              allRoutes.push({
-                id: routeId,
-                name: routeName,
-                layer: polyline,
-                data: routeData,
-                visible: true // Por defecto, visible
-              });
             });
 
             // Actualiza el control de rutas
@@ -423,6 +410,7 @@
               map.fitBounds(allRoutes[0].layer.getBounds());
             }
           });
+        
       }
 
       // Inicialización
