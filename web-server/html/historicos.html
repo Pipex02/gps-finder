@@ -347,6 +347,7 @@
 
             habilitarBoton();
           });
+      }
       
 
       // Funciones de Geoapify
@@ -421,6 +422,8 @@
             return response.json();
           })
           .then((data) => {
+            const allPoints = data.flatMap(route => route);
+            const segments = splitInto10SecondSegments(allPoints); // <--- DECLARAR segments
             if (!data || data.length === 0) {
               alert("No hay datos en este rango de tiempo dentro del radio seleccionado.");
               return;
