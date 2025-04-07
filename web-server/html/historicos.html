@@ -279,6 +279,7 @@
           })
           //diferenciacion de rutas
           .then((data) => {
+            console.log("Datos recibidos:", data); // logs
             if (!data || data.length === 0) {
               alert("No hay datos en este rango de tiempo dentro del radio seleccionado.");
               return;
@@ -414,10 +415,7 @@
         let colorIndex = 0;
         const validSegments = segments.filter(seg => seg.length >= 2);
 
-        // Limpiar capas anteriores
-        map.eachLayer(layer => {
-          if (layer instanceof L.Polyline) map.removeLayer(layer);
-        });
+
 
         validSegments.forEach((coords, index) => {
           const color = colors[index % colors.length];
