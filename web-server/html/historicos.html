@@ -243,64 +243,64 @@
 
       // Nueva función para consultar ubicaciones dentro del radio
       async function consultarUbicacionEspecifica() {
-        const address = document.getElementById("location-input").value;
-        const city = document.getElementById("city-select").value;
-        const radius = document.getElementById("radius-input").value;
-        const config = await getConfig();
-        const apiKey = config.geoapifyApiKey;
+        const addressInput = document.getElementById("location-input");
+        const radiusInput = document.getElementById("radius-input");
+        const startDateTime = document.getElementById("startDateTime");
+        const endDateTime = document.getElementById("endDateTime");
+        const consultButton = document.getElementById("consult-button");
+
+        const address = addressInput.value;
+        const radius = radiusInput.value;
+        const startInput = startDateTime.value;
+        const endInput = endDateTime.value;
 
         if (!address || !radius) {
           alert("Por favor, ingrese una ubicación y un radio.");
           return;
         }
+        if (!startInput || !endInput) {
+          alert("Selecciona ambas fechas y horas.");
+          return;
+        }
 
-        const coords = await fetchCoordinates(address, city, apiKey);
+        const config = await getConfig();
+        const apiKey = config.geoapifyApiKey;
+
+        // Obtener coordenadas geocodificadas
+        const coords = await fetchCoordinates(address, "", apiKey);
         if (!coords) {
           alert("Ubicación no encontrada.");
           return;
         }
 
         const { lat, lon } = coords;
-        const startInput = startDateTime.value;
-        const endInput = endDateTime.value;
-
-        if (!startInput || !endInput) {
-          alert("Selecciona ambas fechas y horas.");
-          return;
-        }
-
         const startFormatted = `${startInput.replace("T", " ")}:00`;
         const endFormatted = `${endInput.replace("T", " ")}:00`;
 
+        // Consultar datos dentro del radio
         fetch(`/api/lugar?latitud=${lat}&longitud=${lon}&radio=${radius}&inicio=${encodeURIComponent(startFormatted)}&fin=${encodeURIComponent(endFormatted)}`)
           .then((response) => {
             if (!response.ok) throw new Error("Error en la respuesta de la API");
             return response.json();
           })
-          //diferenciacion de rutas
           .then((data) => {
-            console.log("Datos recibidos:", data); // logs
             if (!data || data.length === 0) {
               alert("No hay datos en este rango de tiempo dentro del radio seleccionado.");
               return;
             }
 
-            // Validar coordenadas
+            // Procesar segmentos
             const validData = data.filter(point => 
               !isNaN(parseFloat(point.latitud)) && 
               !isNaN(parseFloat(point.longitud))
             );
-            
-            console.log("Datos válidos:", validData);
+            if (validData.length < 2) {
+              alert("No hay suficientes puntos válidos para mostrar rutas.");
+              return;
+            }
 
-            // Procesar y dibujar segmentos
-            const segments = processRouteSegments(validData, 10000);
-            drawRouteSegments(segments); // Pasar validData si es necesario
-
-            // Limpiar capas
-            if (startMarker) map.removeLayer(startMarker);
-            if (endMarker) map.removeLayer(endMarker);
-            if (locationCircle) map.removeLayer(locationCircle);
+            const segments = processRouteSegments(validData, 20000); // 20 segundos
+            drawRouteSegments(segments);
 
             // Dibujar círculo
             locationCircle = L.circle([lat, lon], {
@@ -311,70 +311,13 @@
             }).addTo(map);
           })
           .catch((error) => {
-            console.error("Error al obtener datos de ubicación:", error);
-            alert("Error al consultar la API. Intenta de nuevo.");
+            console.error("Error al consultar la ubicación:", error);
+            alert("Error al obtener los datos. Verifica los parámetros.");
           });
       }
 
-      // Inicialización
-      document.addEventListener("DOMContentLoaded", async () => {
-        try {
-          const config = await getConfig();
-          const apiKey = config.geoapifyApiKey;
-
-          // Actualizar el título de la página con el valor de APP_TITLE
-          if (config.pageTitle) {
-            document.getElementById("page-title").textContent = config.pageTitle || "Consulta de Históricos";
-          }
-
-          const locationInput = document.getElementById("location-input");
-          const suggestionsBox = document.getElementById("suggestions-box");
-          const citySelect = document.getElementById("city-select");
-          const radiusInput = document.getElementById("radius-input");
-
-          // Autocompletado
-          locationInput.addEventListener("input", async () => {
-            const query = locationInput.value;
-            const city = citySelect.value;
-            if (query.length < 7) {
-              suggestionsBox.style.display = "none";
-              return;
-            }
-
-            const suggestions = await fetchAutocomplete(query, city, apiKey);
-            suggestionsBox.innerHTML = "";
-            suggestions.forEach((suggestion, index) => {
-              const div = document.createElement("div");
-              div.className = "suggestion-item";
-              div.textContent = suggestion.label;
-              div.dataset.index = index;
-              div.addEventListener("click", () => {
-                locationInput.value = suggestion.label;
-                suggestionsBox.style.display = "none";
-              });
-              suggestionsBox.appendChild(div);
-            });
-            suggestionsBox.style.display = suggestions.length > 0 ? "block" : "none";
-          });
-
-          locationInput.addEventListener("blur", () => {
-            setTimeout(() => (suggestionsBox.style.display = "none"), 200);
-          });
-
-          // Evento para consultar ubicación específica
-          consultButton.addEventListener("click", consultarUbicacionEspecifica);
-
-          generarElementosDecorativos();
-          startDateTime.addEventListener("input", actualizarRestricciones);
-          endDateTime.addEventListener("input", actualizarRestricciones);
-          inhabilitarBoton();
-        } catch (error) {
-          console.error("Error al cargar la configuración:", error);
-        }
-      });
-
-      // Función para procesar datos y crear segmentos
-      function processRouteSegments(data, maxTimeDiff = 20000) { // 20 segundos
+      // Procesar segmentos basado en tiempo
+      function processRouteSegments(data, maxTimeDiff = 20000) {
         const segments = [];
         let currentSegment = [];
         let lastTimestamp = null;
@@ -387,37 +330,36 @@
 
           const timestamp = new Date(point.timestamp);
           if (index === 0) {
-            currentSegment = [[lat, lng]]; // Inicializar correctamente
+            currentSegment = [[lat, lng]];
             lastTimestamp = timestamp;
           } else {
             const timeDiff = timestamp - lastTimestamp;
             if (timeDiff > maxTimeDiff) {
-              segments.push(currentSegment); // Agregar segmento anterior
-              currentSegment = [[lat, lng]]; // Nuevo segmento
+              segments.push(currentSegment);
+              currentSegment = [[lat, lng]];
             } else {
               currentSegment.push([lat, lng]);
             }
             lastTimestamp = timestamp;
           }
         }
-        if (currentSegment.length >= 2) segments.push(currentSegment); // Agregar último segmento
+        if (currentSegment.length >= 2) segments.push(currentSegment);
         return segments;
       }
 
-
-      // Función para dibujar segmentos con colores alternados
+      // Dibujar segmentos con colores
       function drawRouteSegments(segments) {
         const colors = ["#32CD32", "#FFD700", "#4B0082", "#004e92", "#FF0000"];
         let colorIndex = 0;
-        
-        // Filtrar segmentos válidos
-        const validSegments = segments.filter(seg => seg.length >= 2);
-        
-        // Eliminar marcadores anteriores pero NO las polilíneas existentes
+
+        // Limpiar marcadores anteriores
         if (startMarker) map.removeLayer(startMarker);
         if (endMarker) map.removeLayer(endMarker);
 
-        // Dibujar cada segmento con un color diferente
+        // Filtrar segmentos válidos
+        const validSegments = segments.filter(seg => seg.length >= 2);
+
+        // Dibujar cada segmento
         validSegments.forEach((coords, index) => {
           const color = colors[index % colors.length]; // Asigna color por segmento
           const polyline = L.polyline(coords, {
@@ -426,45 +368,95 @@
             opacity: 0.8
           }).addTo(map);
 
-          // Eventos para resaltar
+          // Eventos de interacción
           polyline.on('mouseover', () => polyline.setStyle({ opacity: 1 }));
           polyline.on('mouseout', () => polyline.setStyle({ opacity: 0.8 }));
+          polyline.bindPopup(`Ruta ${index + 1}<br>Primera coordenada: ${coords[0].join(", ")}`);
 
-          // Pop-up con información
-          polyline.bindPopup(`
-            Ruta ${index + 1}<br>
-            Puntos: ${coords.length}<br>
-            Inicio: ${validData[0].timestamp}<br>
-            Fin: ${validData[validData.length - 1].timestamp}
-          `);
+          // Actualizar marcadores
+          if (index === 0) {
+            startMarker = L.marker(coords[0]).addTo(map);
+          }
+          if (index === validSegments.length - 1) {
+            endMarker = L.marker(coords[coords.length - 1]).addTo(map);
+          }
         });
 
-        // Actualizar marcadores
-        if (validSegments.length > 0) {
-          const firstSegment = validSegments[0];
-          const lastSegment = validSegments[validSegments.length - 1];
-          
-          startMarker = L.marker(firstSegment[0], {
-            icon: L.divIcon({
-              className: "custom-marker",
-              html: '<div style="color: black; font-weight: bold; background: #FFD700; padding: 8px; border-radius: 50%; text-align: center;">A</div>',
-              iconSize: [35, 35],
-            }),
-          }).addTo(map);
-
-          endMarker = L.marker(lastSegment[lastSegment.length - 1], {
-            icon: L.divIcon({
-              className: "custom-marker",
-              html: '<div style="color: white; font-weight: bold; background: #4B0082; padding: 8px; border-radius: 50%; text-align: center;">B</div>',
-              iconSize: [35, 35],
-            }),
-          }).addTo(map);
-        }
-
-        // Ajustar vista al mapa
+        // Ajustar vista
         const bounds = L.latLngBounds();
         validSegments.forEach(coords => coords.forEach(coord => bounds.extend(coord)));
         if (bounds.isValid()) map.fitBounds(bounds);
+      }
+
+      // Segmentar por tiempo
+      function processRouteSegments(data, maxTimeDiff = 20000) {
+        const segments = [];
+        let currentSegment = [];
+        let lastTimestamp = null;
+
+        for (let index = 0; index < data.length; index++) {
+          const point = data[index];
+          const lat = parseFloat(point.latitud);
+          const lng = parseFloat(point.longitud);
+          if (isNaN(lat) || isNaN(lng)) continue;
+
+          const timestamp = new Date(point.timestamp);
+          if (index === 0) {
+            currentSegment.push([lat, lng]);
+            lastTimestamp = timestamp;
+          } else {
+            const timeDiff = timestamp - lastTimestamp;
+            if (timeDiff > maxTimeDiff) {
+              segments.push(currentSegment);
+              currentSegment = [[lat, lng]];
+            } else {
+              currentSegment.push([lat, lng]);
+            }
+            lastTimestamp = timestamp;
+          }
+        }
+        if (currentSegment.length >= 2) segments.push(currentSegment);
+        return segments;
+      }
+
+
+      // Función para dibujar segmentos con colores alternados
+      // Dibujar con colores
+      function drawRouteSegments(segments) {
+        const colors = [
+          "#32CD32", "#FFD700", "#4B0082", 
+          "#004e92", "#FF0000", "#00FF00", 
+          "#FFA500", "#8A2BE2"
+        ];
+        let colorIndex = 0;
+
+        const validSegments = segments.filter(seg => seg.length >= 2);
+        if (validSegments.length === 0) {
+          alert("No hay rutas válidas dentro del área.");
+          return;
+        }
+
+        validSegments.forEach((coords, index) => {
+          const color = colors[index % colors.length];
+          L.polyline(coords, {
+            color: color,
+            weight: 6,
+            opacity: 0.8
+          })
+          .addTo(map)
+          .bindPopup(`Ruta ${index + 1}<br>Longitud: ${coords.length} puntos`);
+        });
+
+        // Actualizar marcadores
+        const firstSegment = validSegments[0];
+        const lastSegment = validSegments[validSegments.length - 1];
+        startMarker = L.marker(firstSegment[0]).addTo(map);
+        endMarker = L.marker(lastSegment[lastSegment.length - 1]).addTo(map);
+
+        // Ajustar vista
+        const bounds = L.latLngBounds();
+        validSegments.forEach(coords => coords.forEach(coord => bounds.extend(coord)));
+        map.fitBounds(bounds);
       }
     </script>
   </body>
