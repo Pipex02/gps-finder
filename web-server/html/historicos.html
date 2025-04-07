@@ -74,7 +74,7 @@
 
       let startMarker, endMarker, locationCircle;
       const polyline = L.polyline([], { color: "#004e92", weight: 6 }).addTo(map);
-      //const filteredPolyline = L.polyline([], { color: "#32CD32", weight: 6 });
+
 
       // Configuración inicial de fechas
       const startDateTime = document.getElementById("startDateTime");
@@ -277,6 +277,7 @@
             if (!response.ok) throw new Error("Error en la respuesta de la API");
             return response.json();
           })
+          //diferenciacion de rutas
           .then((data) => {
             if (!data || data.length === 0) {
               alert("No hay datos en este rango de tiempo dentro del radio seleccionado.");
@@ -287,7 +288,6 @@
             if (startMarker) map.removeLayer(startMarker);
             if (endMarker) map.removeLayer(endMarker);
             if (locationCircle) map.removeLayer(locationCircle);
-            if (map.hasLayer(filteredPolyline)) map.removeLayer(filteredPolyline);
 
             // Procesar y dibujar segmentos
             const segments = processRouteSegments(data, 20000); // 20 segundos
@@ -363,6 +363,7 @@
           console.error("Error al cargar la configuración:", error);
         }
       });
+      
       // Función para procesar datos y crear segmentos
       function processRouteSegments(data, maxTimeDiff = 20000) { // 20 segundos por defecto
         const segments = [];
