@@ -180,10 +180,10 @@ h1 {
 
 .location-filter select,
 .location-filter input {
-    width: 80%;
+    width: 70%;
     padding: 1vh;
     font-family: 'Press Start 2P', cursive;
-    font-size: 0.7rem;
+    font-size: 0.5rem;
     border: 0.3vw solid #00aaff;
     border-radius: 0.5vw;
     background: #002b5e;
@@ -402,14 +402,14 @@ h1 {
     }
 
     .location-filter h2 {
-        font-size: 0.7rem;
+        font-size: 1rem;
     }
 
     .location-filter select,
     .location-filter input {
-        font-size: 0.6rem;
-        padding: 0.8vh;
-        width: 90%;
+        font-size: 1.2rem;
+        padding: 2vh;
+        width: 100%;
     }
 
     #suggestions-box {
@@ -481,14 +481,15 @@ h1 {
     }
 
     .location-filter h2 {
-        font-size: 0.6rem;
+        font-size: 1rem;
     }
 
     .location-filter select,
     .location-filter input {
-        font-size: 0.5rem;
+        font-size: 1rem;
         padding: 0.6vh;
         width: 90%;
+        height: 70%;
     }
 
     #suggestions-box {
@@ -497,11 +498,11 @@ h1 {
     }
 
     .suggestion-item {
-        font-size: 0.5rem;
+        font-size: 1rem;
     }
 
     #consult-button {
-        font-size: 0.6rem;
+        font-size: 0.8rem;
         padding: 1.2vh 3vw;
         width: auto;
         display: flex;
