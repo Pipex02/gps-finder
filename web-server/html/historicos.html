@@ -27,19 +27,22 @@
           <br /><br />
           <div class="button-container">
             <button class="button" onclick="consultar()">Consultar</button>
-            <h2>Ciudad:</h2>
-            <select id="city-select">
-              <option value="Barranquilla" selected>Barranquilla</option>
-              <option value="Bogotá">Bogotá</option>
-              <option value="Medellín">Medellín</option>
-              <option value="Cali">Cali</option>
-              <option value="Cartagena">Cartagena</option>
-            </select>
-            <br /><br />
-            <input type="text" id="location-input" placeholder="Ingrese ubicación" />
-            <div id="suggestions-box" class="suggestions"></div>
-            <input type="number" id="radius-input" placeholder="Radio (m)" min="10" max="5000" />
-            <button id="consult-button" class="button" disabled>Consultar Ubicación Específica</button>
+            <!-- Agrupamos los elementos que se mostrarán después -->
+            <div class="location-filter" id="location-filter" style="display: none;">
+              <h2>Ciudad:</h2>
+              <select id="city-select">
+                <option value="Barranquilla" selected>Barranquilla</option>
+                <option value="Bogotá">Bogotá</option>
+                <option value="Medellín">Medellín</option>
+                <option value="Cali">Cali</option>
+                <option value="Cartagena">Cartagena</option>
+              </select>
+              <br /><br />
+              <input type="text" id="location-input" placeholder="Ingrese ubicación" />
+              <div id="suggestions-box" class="suggestions"></div>
+              <input type="number" id="radius-input" placeholder="Radio (m)" min="10" max="5000" />
+              <button id="consult-button" class="button" disabled>Consultar Ubicación Específica</button>
+            </div>
           </div>
         </section>
       </div>
@@ -137,6 +140,9 @@
 
       // Consultar la API de históricos
       function consultar() {
+        // Ocultar el contenedor al inicio de una nueva consulta
+        document.getElementById("location-filter").style.display = "none";
+
         const startInput = startDateTime.value;
         const endInput = endDateTime.value;
 
@@ -199,6 +205,9 @@
 
             map.fitBounds(polyline.getBounds());
             habilitarBoton();
+
+            // Mostrar el contenedor de filtro por ubicación
+            document.getElementById("location-filter").style.display = "block";
           })
           .catch((error) => {
             console.error("Error al obtener datos históricos:", error);
