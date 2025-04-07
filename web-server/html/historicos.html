@@ -294,7 +294,7 @@
 
             // Procesar y dibujar segmentos
             const segments = processRouteSegments(validData, 20000);
-            drawRouteSegments(segments, validData); // Pasar validData si es necesario
+            drawRouteSegments(segments); // Pasar validData si es necesario
 
             // Limpiar capas
             if (startMarker) map.removeLayer(startMarker);
@@ -454,9 +454,16 @@
         }
 
         // Ajustar vista al mapa
+        // Ajustar vista al mapa
         const bounds = L.latLngBounds();
         validSegments.forEach(coords => coords.forEach(coord => bounds.extend(coord)));
-        map.fitBounds(bounds);
+        
+        // ¡VALIDACIÓN ADICIONAL!
+        if (bounds.isValid()) {
+          map.fitBounds(bounds);
+        } else {
+          console.error("No hay coordenadas válidas para ajustar la vista.");
+        }
       }
     </script>
   </body>
