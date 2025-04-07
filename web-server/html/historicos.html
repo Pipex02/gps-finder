@@ -286,6 +286,7 @@
             const segments = [];
             let currentSegment = [];
             let previousTimestamp;
+            let filteredPolylines = [];
 
             data.forEach((point, index) => {
               const timestamp = new Date(point.timestamp).getTime();
@@ -328,10 +329,10 @@
             const colors = ['#32CD32', '#FFD700', '#4B0082', '#FF6347', '#9370DB']; // Colores disponibles
             let polylineIndex = 0;
 
-            // Eliminar polilíneas anteriores
-            //if (map.hasLayer(filteredPolyline)) {
-            //  map.removeLayer(filteredPolyline);
-            //}
+            //Eliminar polilíneas anteriores
+            if (map.hasLayer(filteredPolyline)) {
+              map.removeLayer(filteredPolyline);
+            }
 
             // Dibujar cada segmento con un color distinto
             segments.forEach((segment, segmentIndex) => {
@@ -347,10 +348,8 @@
               }).addTo(map);
 
               // Guardar referencia para futuras actualizaciones
-              if (!filteredPolylines) {
-                window.filteredPolylines = [];
-              }
-              window.filteredPolylines.push(newPolyline);
+              // Usar filteredPolylines (ya inicializada)
+              filteredPolylines.push(newPolyline);
             });
 
 
