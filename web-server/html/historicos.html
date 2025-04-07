@@ -279,42 +279,38 @@
           })
           //diferenciacion de rutas
           .then((data) => {
-            if (!data || data.length === 0) return;
+            if (!data || data.length === 0) {
+              alert("No hay datos en este rango de tiempo dentro del radio seleccionado.");
+              return;
+            }
+
+            // Validar coordenadas
             const validData = data.filter(point => 
               !isNaN(parseFloat(point.latitud)) && 
               !isNaN(parseFloat(point.longitud))
             );
-            if (validData.length === 0) return;
+            if (validData.length === 0) {
+              alert("No hay datos válidos en este rango de tiempo.");
+              return;
+            }
+
+            // Procesar y dibujar segmentos
             const segments = processRouteSegments(validData, 20000);
-            drawRouteSegments(segments, validData); // ¡Pasar validData!
+            drawRouteSegments(segments, validData); // Pasar validData si es necesario
 
-          // Validar coordenadas
-          const validData = data.filter(point => 
-            !isNaN(parseFloat(point.latitud)) && 
-            !isNaN(parseFloat(point.longitud))
-          );
-          if (validData.length === 0) {
-            alert("No hay datos válidos en este rango de tiempo.");
-            return;
-          }
+            // Limpiar capas
+            if (startMarker) map.removeLayer(startMarker);
+            if (endMarker) map.removeLayer(endMarker);
+            if (locationCircle) map.removeLayer(locationCircle);
 
-          // Procesar datos validados
-          const segments = processRouteSegments(validData, 20000); // Solo una declaración
-          drawRouteSegments(segments);
-
-          // Limpiar capas
-          if (startMarker) map.removeLayer(startMarker);
-          if (endMarker) map.removeLayer(endMarker);
-          if (locationCircle) map.removeLayer(locationCircle);
-
-          // Dibujar círculo
-          locationCircle = L.circle([lat, lon], {
-            color: "#32CD32",
-            weight: 2,
-            fill: false,
-            radius: parseFloat(radius),
-          }).addTo(map);
-        })
+            // Dibujar círculo
+            locationCircle = L.circle([lat, lon], {
+              color: "#32CD32",
+              weight: 2,
+              fill: false,
+              radius: parseFloat(radius),
+            }).addTo(map);
+          })
           .catch((error) => {
             console.error("Error al obtener datos de ubicación:", error);
             alert("Error al consultar la API. Intenta de nuevo.");
