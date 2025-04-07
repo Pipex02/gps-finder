@@ -299,22 +299,22 @@
           const segments = processRouteSegments(validData, 20000);
           drawRouteSegments(segments);
 
-          // Limpiar capas existentes
-          if (startMarker) map.removeLayer(startMarker);
-          if (endMarker) map.removeLayer(endMarker);
-          if (locationCircle) map.removeLayer(locationCircle);
+            // Limpiar capas existentes
+            if (startMarker) map.removeLayer(startMarker);
+            if (endMarker) map.removeLayer(endMarker);
+            if (locationCircle) map.removeLayer(locationCircle);
 
-          // Procesar y dibujar segmentos
-          const segments = processRouteSegments(data, 20000); // 20 segundos
-          drawRouteSegments(segments);
+            // Procesar y dibujar segmentos
+            const segments = processRouteSegments(data, 20000); // 20 segundos
+            drawRouteSegments(segments);
 
-          // Dibujar círculo solo con contorno
-          locationCircle = L.circle([lat, lon], {
-            color: "#32CD32",
-            weight: 2,
-            fill: false,
-            radius: parseFloat(radius),
-          }).addTo(map);
+            // Dibujar círculo solo con contorno
+            locationCircle = L.circle([lat, lon], {
+              color: "#32CD32",
+              weight: 2,
+              fill: false,
+              radius: parseFloat(radius),
+            }).addTo(map);
           })
           .catch((error) => {
             console.error("Error al obtener datos de ubicación:", error);
