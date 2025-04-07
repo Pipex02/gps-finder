@@ -280,3 +280,16 @@ h1 {
         opacity: 0;
     }
 }
+
+
+.route-control-container {
+    margin-top: 20px;
+    padding: 10px;
+    background: rgba(255,255,255,0.9);
+    border-radius: 8px;
+  }
+
+#route-controls {
+max-height: 200px;
+overflow-y: auto;
+}

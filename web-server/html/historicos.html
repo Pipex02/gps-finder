@@ -74,7 +74,7 @@
 
       let startMarker, endMarker, locationCircle;
       const polyline = L.polyline([], { color: "#004e92", weight: 6 }).addTo(map);
-      const filteredPolyline = L.polyline([], { color: "#32CD32", weight: 6 });
+
 
       // Configuración inicial de fechas
       const startDateTime = document.getElementById("startDateTime");
@@ -243,35 +243,41 @@
 
       // Nueva función para consultar ubicaciones dentro del radio
       async function consultarUbicacionEspecifica() {
-        const address = document.getElementById("location-input").value;
-        const city = document.getElementById("city-select").value;
-        const radius = document.getElementById("radius-input").value;
-        const config = await getConfig();
-        const apiKey = config.geoapifyApiKey;
+        const addressInput = document.getElementById("location-input");
+        const radiusInput = document.getElementById("radius-input");
+        const startDateTime = document.getElementById("startDateTime");
+        const endDateTime = document.getElementById("endDateTime");
+        const consultButton = document.getElementById("consult-button");
+
+        const address = addressInput.value;
+        const radius = radiusInput.value;
+        const startInput = startDateTime.value;
+        const endInput = endDateTime.value;
 
         if (!address || !radius) {
           alert("Por favor, ingrese una ubicación y un radio.");
           return;
         }
+        if (!startInput || !endInput) {
+          alert("Selecciona ambas fechas y horas.");
+          return;
+        }
 
-        const coords = await fetchCoordinates(address, city, apiKey);
+        const config = await getConfig();
+        const apiKey = config.geoapifyApiKey;
+
+        // Obtener coordenadas geocodificadas
+        const coords = await fetchCoordinates(address, "", apiKey);
         if (!coords) {
           alert("Ubicación no encontrada.");
           return;
         }
 
         const { lat, lon } = coords;
-        const startInput = startDateTime.value;
-        const endInput = endDateTime.value;
-
-        if (!startInput || !endInput) {
-          alert("Selecciona ambas fechas y horas.");
-          return;
-        }
-
         const startFormatted = `${startInput.replace("T", " ")}:00`;
         const endFormatted = `${endInput.replace("T", " ")}:00`;
 
+        // Consultar datos dentro del radio
         fetch(`/api/lugar?latitud=${lat}&longitud=${lon}&radio=${radius}&inicio=${encodeURIComponent(startFormatted)}&fin=${encodeURIComponent(endFormatted)}`)
           .then((response) => {
             if (!response.ok) throw new Error("Error en la respuesta de la API");
@@ -283,61 +289,58 @@
               return;
             }
 
-            const route = data.map((coord) => [parseFloat(coord.latitud), parseFloat(coord.longitud)]);
-            filteredPolyline.setLatLngs(route);
-            if (!map.hasLayer(filteredPolyline)) filteredPolyline.addTo(map);
-
-            if (startMarker) map.removeLayer(startMarker);
-            if (endMarker) map.removeLayer(endMarker);
-            if (locationCircle) map.removeLayer(locationCircle);
-
-            if (route.length > 1) {
-              startMarker = L.marker(route[0], {
-                icon: L.divIcon({
-                  className: "custom-marker",
-                  html: '<div style="color: black; font-weight: bold; background: #FFD700; padding: 8px; border-radius: 50%; text-align: center;">A</div>',
-                  iconSize: [35, 35],
-                }),
-              })
-                .bindPopup(`Inicio: ${data[0].timestamp}`)
-                .addTo(map);
-
-              endMarker = L.marker(route[route.length - 1], {
-                icon: L.divIcon({
-                  className: "custom-marker",
-                  html: '<div style="color: white; font-weight: bold; background: #4B0082; padding: 8px; border-radius: 50%; text-align: center;">B</div>',
-                  iconSize: [35, 35],
-                }),
-              })
-                .bindPopup(`Fin: ${data[data.length - 1].timestamp}`)
-                .addTo(map);
+            // Procesar segmentos
+            const validData = data.filter(point => 
+              !isNaN(parseFloat(point.latitud)) && 
+              !isNaN(parseFloat(point.longitud))
+            );
+            if (validData.length < 2) {
+              alert("No hay suficientes puntos válidos para mostrar rutas.");
+              return;
             }
 
-            // Dibujar círculo solo con contorno
+            const segments = processRouteSegments(validData, 20000); // 20 segundos
+            drawRouteSegments(segments);
+
+            // Dibujar círculo
             locationCircle = L.circle([lat, lon], {
-              color: "#32CD32", // Verde igual que la polilínea
-              weight: 2, // Grosor del contorno
-              fill: false, // Sin relleno
+              color: "#32CD32",
+              weight: 2,
+              fill: false,
               radius: parseFloat(radius),
             }).addTo(map);
-
-            map.fitBounds(filteredPolyline.getBounds());
           })
           .catch((error) => {
-            console.error("Error al obtener datos de ubicación:", error);
-            alert("Error al consultar la API. Intenta de nuevo.");
+            console.error("Error al consultar la ubicación:", error);
+            alert("Error al obtener los datos. Verifica los parámetros.");
           });
       }
 
-      // Inicialización
-      document.addEventListener("DOMContentLoaded", async () => {
-        try {
-          const config = await getConfig();
-          const apiKey = config.geoapifyApiKey;
+      // Procesar segmentos basado en tiempo
+      function processRouteSegments(data, maxTimeDiff = 20000) {
+        const segments = [];
+        let currentSegment = [];
+        let lastTimestamp = null;
 
-          // Actualizar el título de la página con el valor de APP_TITLE
-          if (config.pageTitle) {
-            document.getElementById("page-title").textContent = config.pageTitle || "Consulta de Históricos";
+        for (let index = 0; index < data.length; index++) {
+          const point = data[index];
+          const lat = parseFloat(point.latitud);
+          const lng = parseFloat(point.longitud);
+          if (isNaN(lat) || isNaN(lng)) continue;
+
+          const timestamp = new Date(point.timestamp);
+          if (index === 0) {
+            currentSegment = [[lat, lng]];
+            lastTimestamp = timestamp;
+          } else {
+            const timeDiff = timestamp - lastTimestamp;
+            if (timeDiff > maxTimeDiff) {
+              segments.push(currentSegment);
+              currentSegment = [[lat, lng]];
+            } else {
+              currentSegment.push([lat, lng]);
+            }
+            lastTimestamp = timestamp;
           }
 
           const locationInput = document.getElementById("location-input");
@@ -385,8 +388,6 @@
           console.error("Error al cargar la configuración:", error);
         }
       });
-
-      
     </script>
   </body>
 </html>

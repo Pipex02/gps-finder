@@ -6,6 +6,24 @@ const cors = require("cors");
 const app = express();
 const PORT = 3000;
 
+// Ruta para servir el HTML con el título dinámico
+app.get('/', (req, res) => {
+    // Leer el archivo HTML
+    fs.readFile('index.html', 'utf8', (err, data) => {
+      if (err) {
+        return res.status(500).send('Error al leer el HTML');
+      }
+  
+      // Reemplazar el título con la variable de entorno
+      const modifiedHTML = data.replace(
+        /<title>.*?<\/title>/,
+        `<title>${process.env.APP_TITLE}</title>`  // se debe crear una nueva variable de este nombre
+      );
+  
+      res.send(modifiedHTML);
+    });
+});
+
 // Configuración de CORS para permitir peticiones desde el frontend
 app.use(cors());
 
@@ -78,6 +96,81 @@ app.get("/historicos", (req, res) => {
     });
 });
 
+
+// Nueva ruta para verificar ubicación con radio y fechas del histórico
+app.get("/api/check-location-with-historic-time", (req, res) => {
+    const latStr = req.query.lat;
+    const lonStr = req.query.lng;
+    const radiusStr = req.query.radius;
+    const inicio = req.query.inicio;
+    const fin = req.query.fin;
+
+    // Convertir a números
+    const lat = parseFloat(row.latitud).toFixed(5);
+    const lon = parseFloat(row.longitud).toFixed(5);
+    const radius = parseFloat(radiusStr);
+
+    // Validar parámetros
+    if (isNaN(lat) || isNaN(lon) || isNaN(radius) || !inicio || !fin) {
+        return res.status(400).json({ error: "Parámetros inválidos" });
+    }
+
+    // Validar fechas
+    const inicioDate = new Date(inicio);
+    const finDate = new Date(fin);
+    if (isNaN(inicioDate) || isNaN(finDate)) {
+        return res.status(400).json({ error: "Fechas inválidas" });
+    }
+
+    // Formatear fechas para MySQL
+    const inicioFormatted = inicioDate.toISOString().slice(0, 19).replace('T', ' ');
+    const finFormatted = finDate.toISOString().slice(0, 19).replace('T', ' ');
+
+    // Calcular límites geográficos
+    const radiusKM = radius / 1000; // Radio en kilómetros
+    const latRad = lat * (Math.PI / 180);
+    const deltaLon = Math.asin(Math.sin(radiusKM / 6371) / Math.cos(latRad)) * (180 / Math.PI);
+
+    const latMin = lat - (radiusKM / 111.32);
+    const latMax = lat + (radiusKM / 111.32);
+    const lngMin = lon - deltaLon;
+    const lngMax = lon + deltaLon;
+
+    // Consulta SQL
+    const query = `
+        SELECT latitud, longitud, timestamp 
+        FROM coordenadas 
+        WHERE 
+            latitud BETWEEN ? AND ?
+            AND longitud BETWEEN ? AND ?
+            AND timestamp BETWEEN ? AND ?
+    `;
+
+    const values = [
+        latMin, latMax,
+        lngMin, lngMax,
+        inicioFormatted,
+        finFormatted
+    ];
+
+    db.query(query, values, (err, results) => {
+        if (err) {
+            console.error("Error en la consulta:", err);
+            return res.status(500).json({ error: "Error interno" });
+        }
+
+        const hasVisited = results.length > 0;
+        res.json({
+            visited: hasVisited,
+            visits: results,
+            message: hasVisited 
+                ? `Hubo ${results.length} visitas dentro del radio y período especificado.` 
+                : "No hubo visitas en ese rango."
+        });
+    });
+});
+
+
 // Ruta para obtener configuración de la API
 app.get("/config", (req, res) => {
     const config = {
@@ -92,7 +185,7 @@ app.get("/config", (req, res) => {
     res.json(config);
 });
 
-// NUEVA RUTA: Obtener coordenadas dentro de un radio y en un rango de fechas
+// NUEVA RUTA: Obtener coordenadas dentro de un radio y en un rango de fechas (MODIFICADA)
 app.get("/lugar", (req, res) => {
     const { latitud, longitud, radio, inicio, fin } = req.query;
 
@@ -117,13 +210,50 @@ app.get("/lugar", (req, res) => {
         if (err) {
             console.error("❌ Error al obtener datos de la ubicación:", err);
             res.status(500).json({ error: "Error al obtener datos de la ubicación" });
-        } else {
-            res.json(results.map(row => ({
-                latitud: parseFloat(row.latitud).toFixed(5),
-                longitud: parseFloat(row.longitud).toFixed(5),
-                timestamp: row.timestamp
-            })));
+            return;
         }
+
+        // Procesar los resultados para agrupar en rutas con diferencias >20 minutos
+        const points = results.map(row => ({
+            latitud: parseFloat(row.latitud).toFixed(5),
+            longitud: parseFloat(row.longitud).toFixed(5),
+            timestamp: row.timestamp
+        }));
+
+        const routes = [];
+        let currentRoute = [];
+        let previousTimestamp;
+
+        points.forEach((point, index) => {
+            if (index === 0) {
+                currentRoute = [point];
+                previousTimestamp = new Date(point.timestamp);
+                return;
+            }
+
+            const currentTimestamp = new Date(point.timestamp);
+            const timeDiff = currentTimestamp - previousTimestamp;
+
+            if (timeDiff > 20 * 60 * 1000) { // 20 minutos en milisegundos
+                routes.push(currentRoute);
+                currentRoute = [point];
+            } else {
+                currentRoute.push(point);
+            }
+            previousTimestamp = currentTimestamp;
+        });
+
+        // Agregar la última ruta
+        if (currentRoute.length > 0) {
+            routes.push(currentRoute);
+        }
+
+        // Devolver las rutas agrupadas
+        res.json(routes.map(route => route.map(p => ({
+            latitud: p.latitud,
+            longitud: p.longitud,
+            timestamp: p.timestamp
+        }))));
     });
 });
 
