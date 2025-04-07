@@ -407,33 +407,36 @@
 
       // Función para dibujar segmentos con colores alternados
       function drawRouteSegments(segments) {
-        const colors = [
-          "#32CD32", "#FFD700", "#4B0082", 
-          "#004e92", "#FF0000", "#00FF00", 
-          "#FFA500", "#8A2BE2"
-        ];
+        const colors = ["#32CD32", "#FFD700", "#4B0082", "#004e92", "#FF0000"];
         let colorIndex = 0;
-
+        
         // Filtrar segmentos válidos
         const validSegments = segments.filter(seg => seg.length >= 2);
-
-        // Eliminar solo los marcadores anteriores
+        
+        // Eliminar marcadores anteriores pero NO las polilíneas existentes
         if (startMarker) map.removeLayer(startMarker);
         if (endMarker) map.removeLayer(endMarker);
 
+        // Dibujar cada segmento con un color diferente
         validSegments.forEach((coords, index) => {
           const color = colors[index % colors.length]; // Asigna color por segmento
-          L.polyline(coords, {
+          const polyline = L.polyline(coords, {
             color: color,
             weight: 6,
             opacity: 0.8
-          })
-          .addTo(map)
-          .bindPopup(`Ruta ${index + 1}<br>Longitud: ${coords.length} puntos`);
+          }).addTo(map);
 
-          // Eventos
+          // Eventos para resaltar
           polyline.on('mouseover', () => polyline.setStyle({ opacity: 1 }));
           polyline.on('mouseout', () => polyline.setStyle({ opacity: 0.8 }));
+
+          // Pop-up con información
+          polyline.bindPopup(`
+            Ruta ${index + 1}<br>
+            Puntos: ${coords.length}<br>
+            Inicio: ${validData[0].timestamp}<br>
+            Fin: ${validData[validData.length - 1].timestamp}
+          `);
         });
 
         // Actualizar marcadores
@@ -441,11 +444,24 @@
           const firstSegment = validSegments[0];
           const lastSegment = validSegments[validSegments.length - 1];
           
-          startMarker = L.marker(firstSegment[0]).addTo(map);
-          endMarker = L.marker(lastSegment[lastSegment.length - 1]).addTo(map);
+          startMarker = L.marker(firstSegment[0], {
+            icon: L.divIcon({
+              className: "custom-marker",
+              html: '<div style="color: black; font-weight: bold; background: #FFD700; padding: 8px; border-radius: 50%; text-align: center;">A</div>',
+              iconSize: [35, 35],
+            }),
+          }).addTo(map);
+
+          endMarker = L.marker(lastSegment[lastSegment.length - 1], {
+            icon: L.divIcon({
+              className: "custom-marker",
+              html: '<div style="color: white; font-weight: bold; background: #4B0082; padding: 8px; border-radius: 50%; text-align: center;">B</div>',
+              iconSize: [35, 35],
+            }),
+          }).addTo(map);
         }
 
-        // Ajustar vista
+        // Ajustar vista al mapa
         const bounds = L.latLngBounds();
         validSegments.forEach(coords => coords.forEach(coord => bounds.extend(coord)));
         if (bounds.isValid()) map.fitBounds(bounds);
