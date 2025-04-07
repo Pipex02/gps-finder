@@ -386,13 +386,13 @@
 
           const timestamp = new Date(point.timestamp);
           if (index === 0) {
-            currentSegment.push([lat, lng]);
+            currentSegment = [[lat, lng]]; // Inicializar correctamente
             lastTimestamp = timestamp;
           } else {
             const timeDiff = timestamp - lastTimestamp;
             if (timeDiff > maxTimeDiff) {
               segments.push(currentSegment); // Agregar segmento anterior
-              currentSegment = [[lat, lng]]; // Iniciar nuevo segmento
+              currentSegment = [[lat, lng]]; // Nuevo segmento
             } else {
               currentSegment.push([lat, lng]);
             }
@@ -406,49 +406,44 @@
 
       // Función para dibujar segmentos con colores alternados
       function drawRouteSegments(segments) {
-        const colors = ["#32CD32", "#FFD700", "#4B0082", "#004e92", "#FF0000"];
+        const colors = [
+          "#32CD32", "#FFD700", "#4B0082", 
+          "#004e92", "#FF0000", "#00FF00", 
+          "#FFA500", "#8A2BE2"
+        ];
         let colorIndex = 0;
-        const validSegments = segments.filter(seg => seg.length >= 2);
+        const validSegments = segements.filter(seg => seg.length >= 2);
+
+        // Limpiar capas anteriores
+        map.eachLayer(layer => {
+          if (layer instanceof L.Polyline) map.removeLayer(layer);
+        });
 
         validSegments.forEach((coords, index) => {
-          const color = colors[index % colors.length]; // Asignar color por segmento
-          const polyline = L.polyline(coords, {
+          const color = colors[index % colors.length];
+          L.polyline(coords, {
             color: color,
             weight: 6,
             opacity: 0.8
-          }).addTo(map);
+          })
+          .addTo(map)
+          .bindPopup(`Ruta ${index + 1}<br>Primera coordenada: ${coords[0].join(", ")}`);
 
+          // Resaltar al pasar el mouse
           polyline.on('mouseover', () => polyline.setStyle({ opacity: 1 }));
           polyline.on('mouseout', () => polyline.setStyle({ opacity: 0.8 }));
-
-          // Mostrar información al hacer clic
-          polyline.bindPopup(`Ruta ${index + 1}<br>Inicio: ${data[index].timestamp}<br>Fin: ${data[data.length - 1].timestamp}`);
         });
 
         // Actualizar marcadores
         if (validSegments.length > 0) {
-          const firstPoint = validSegments[0][0];
+          const firstSegment = validSegments[0];
           const lastSegment = validSegments[validSegments.length - 1];
-          const lastPoint = lastSegment[lastSegment.length - 1];
-
-          startMarker = L.marker(firstPoint, {
-            icon: L.divIcon({
-              className: "custom-marker",
-              html: '<div style="color: black; font-weight: bold; background: #FFD700; padding: 8px; border-radius: 50%; text-align: center;">A</div>',
-              iconSize: [35, 35],
-            }),
-          }).bindPopup("Inicio de la primera ruta").addTo(map);
-
-          endMarker = L.marker(lastPoint, {
-            icon: L.divIcon({
-              className: "custom-marker",
-              html: '<div style="color: white; font-weight: bold; background: #4B0082; padding: 8px; border-radius: 50%; text-align: center;">B</div>',
-              iconSize: [35, 35],
-            }),
-          }).bindPopup("Fin de la última ruta").addTo(map);
+          
+          startMarker = L.marker(firstSegment[0]).addTo(map);
+          endMarker = L.marker(lastSegment[lastSegment.length - 1]).addTo(map);
         }
 
-        // Ajustar el mapa a los segmentos válidos
+        // Ajustar vista
         const bounds = L.latLngBounds();
         validSegments.forEach(coords => coords.forEach(coord => bounds.extend(coord)));
         if (bounds.isValid()) map.fitBounds(bounds);
