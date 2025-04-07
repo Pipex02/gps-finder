@@ -49,11 +49,6 @@ h1 {
     left: 4vw;
 }
 
-  
-
-
-
-
 .content {
     width: 100vw;
     height: 80vh;
@@ -63,26 +58,26 @@ h1 {
 
 #map-container {
     width: 67%;
-    height: 100%;
+    height: 80vh;
     margin-left: 1vw;
 }
 
 #map {
-    width: 105%;
+    width: 100%;
     height: 100%;
     border-radius: 2vw;
-    box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.2); /* Sombra ligera */
+    box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.2);
 }
 
 .info {
     display: flex;
-    flex-direction: column; /* Organiza los elementos en una columna */
-    align-items: center; /* Centra los elementos */
+    flex-direction: column;
+    align-items: center;
 }
 
 .card {
     font-family: 'Press Start 2P', cursive;
-    font-size: 0.5rem; /* Ajusta el valor según necesites */
+    font-size: 0.5rem;
     width: 20vw;
     max-width: 25vw;
     background: #002b5e;
@@ -96,8 +91,6 @@ h1 {
     align-items: right;
     justify-content: right;
 }
-
-
 
 .datetime-card {
     position: relative;
@@ -114,7 +107,6 @@ h1 {
     flex-direction: column;
     align-items: center;
     margin-left: 5vw;  
-    
 }
 
 .button-container {
@@ -122,19 +114,25 @@ h1 {
     flex-direction: column;
     height: auto;
     padding: 2vh;
-
+    align-items: center;
+    justify-content: center;
 }
 
 .button {
     font-family: 'Press Start 2P', cursive;
+    width: 14vw;
     padding: 0.8vh 2vw;
     border: 0.4vw solid #00aaff;
     box-shadow: 0.5vw 0.5vw 0 #004e92;
     background: #002b5e;
     color: #00aaff;
     cursor: pointer;
-    font-size: 1rem;
+    font-size: 0.8rem;
     transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
 }
 
 .button:hover {
@@ -142,7 +140,6 @@ h1 {
     box-shadow: 0.6vw 0.6vw 0 #000428;
     transform: translate(0.2vw, 0.2vw);
 }
-
 
 .search-container {
     display: flex;
@@ -168,33 +165,70 @@ h1 {
     text-align: center;
 }
 
-.suggestions {
-    position: absolute;
-    top: 100%;
-    left: 0;
+.location-filter {
+    margin-top: 2vh;
+    display: flex;
+    flex-direction: column;
+    gap: 1vh;
     width: 100%;
-    background: white;
-    border: 1px solid #ccc;
-    border-top: none;
-    max-height: 200px;
+}
+
+.location-filter h2 {
+    font-size: 0.8rem;
+    margin-bottom: 0.5vh;
+}
+
+.location-filter select,
+.location-filter input {
+    width: 70%;
+    padding: 1vh;
+    font-family: 'Press Start 2P', cursive;
+    font-size: 0.5rem;
+    border: 0.3vw solid #00aaff;
+    border-radius: 0.5vw;
+    background: #002b5e;
+    color: #00aaff;
+    text-align: center;
+}
+
+.location-filter input[type="number"] {
+    -webkit-appearance: none;
+    -moz-appearance: textfield;
+    appearance: textfield;
+}
+
+.location-filter input[type="number"]::-webkit-inner-spin-button,
+.location-filter input[type="number"]::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+#suggestions-box {
+    background: #002b5e;
+    border: 0.2vw solid #000428;
+    color: #00aaff;
+    max-height: 20vh;
     overflow-y: auto;
+    position: absolute;
+    width: 18vw;
     z-index: 1000;
-    display: none;
+    margin-top: 3.5vh;
 }
 
 .suggestion-item {
-    padding: 10px;
+    padding: 0.5vh 1vw;
     cursor: pointer;
+    font-size: 0.7rem;
 }
 
 .suggestion-item:hover {
-    background: #f0f0f0;
+    background: #004e92;
 }
 
 #consult-button {
     font-family: 'Press Start 2P', cursive;
     padding: 1vh 2vw;
-    margin-top: 8vh;
+    margin-top: 2vh;
     border: 0.4vw solid #00aaff;
     box-shadow: 0.5vw 0.5vw 0 #004e92;
     background: #010811;
@@ -218,9 +252,6 @@ h1 {
     cursor: not-allowed;
 }
 
-
-
-
 .head {
     font-size: 1rem;
     font-weight: bold;
@@ -231,18 +262,15 @@ h1 {
     border-bottom: 0.25rem solid #000428; 
     margin-left: -0.9vw;
     display: flex;
-    justify-content: center; /* Centra el contenido horizontalmente */
-    align-items: center; /* Centra el contenido verticalmente */
+    justify-content: center;
+    align-items: center;
 }
-
-
 
 .card-content p {
     margin: 0;
-    padding: 0.5vh 1vw; /* Espaciado para los párrafos */
+    padding: 0.5vh 1vw;
     margin-bottom: 2vh;
 }
-
 
 .star {
     position: absolute;
@@ -252,6 +280,7 @@ h1 {
     box-shadow: 0 0 5px white;
     border-radius: 50%;
     animation: twinkle 2s infinite alternate;
+    z-index: 1;
 }
 
 @keyframes twinkle {
@@ -268,6 +297,7 @@ h1 {
     transform: rotate(-30deg);
     opacity: 0;
     animation: shooting 3s infinite linear;
+    z-index: 1;
 }
 
 @keyframes shooting {
@@ -278,5 +308,206 @@ h1 {
     100% {
         transform: translate(-10vw, 100vh) rotate(-30deg);
         opacity: 0;
+    }
+}
+
+@media (max-width: 768px) {
+    body {
+        overflow-y: auto;
+        height: auto;
+    }
+  
+    header {
+        flex-direction: column;
+        height: auto;
+        margin-bottom: 2vh;
+    }
+  
+    h1 {
+        font-size: 1.5em;
+    }
+  
+    .content {
+        flex-direction: column;
+        height: 100%;
+        justify-content: center;
+        align-items: center;
+    }
+  
+    #map-container {
+        width: 90vw;
+        height: 90vh;
+        margin: 0 auto;
+    }
+  
+    #map {
+        width: 100%;
+        height: 100%;
+        margin-bottom: 2vh;
+    }
+  
+    .info {
+        width: 100%;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+    }
+  
+    .card, .datetime-card {
+        width: 70vw;
+        max-width: 80vw;
+        margin: 1vh auto;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .datetime-card {
+        height: auto;
+        margin: 3vh auto;
+        flex-direction: column;
+        align-items: center;
+    }
+  
+    .button-container {
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        gap: 2vh;
+        padding: 1vh;
+        width: auto;
+    }
+  
+    .button {
+        font-size: 1.2rem;
+        padding: 2.5vh 5.5vw;
+        width: auto;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        line-height: 1;
+    }
+  
+    #back-button {
+        position: static;
+        margin-bottom: 2vh;
+        margin-top: 2vh;
+        font-size: 1.2rem;
+        padding: 2.5vh 5.5vw;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        line-height: 1;
+    }
+
+    .location-filter h2 {
+        font-size: 1rem;
+    }
+
+    .location-filter select,
+    .location-filter input {
+        font-size: 1.2rem;
+        padding: 2vh;
+        width: 100%;
+    }
+
+    #suggestions-box {
+        width: 70vw;
+        margin-top: 4vh;
+    }
+
+    .suggestion-item {
+        font-size: 0.6rem;
+    }
+
+    #consult-button {
+        font-size: 0.7rem;
+        padding: 1.5vh 4vw;
+        width: auto;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        line-height: 1;
+    }
+}
+
+@media (max-width: 480px) {
+    h1 {
+        font-size: 1.2em;
+    }
+
+    #map-container {
+        height: 40vh;
+    }
+
+    .card, .datetime-card {
+        width: 90vw;
+    }
+
+    .datetime-card {
+        height: auto;
+        margin: 3vh auto;
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .button-container {
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        gap: 2vh;
+        padding: 1vh;
+        width: auto;
+    }
+
+    .button {
+        font-size: 0.9rem;
+        padding: 1.8vh 4vw;
+        width: auto;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        line-height: 1;
+    }
+
+    #back-button {
+        font-size: 0.9rem;
+        padding: 1.8vh 4vw;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        line-height: 1;
+    }
+
+    .location-filter h2 {
+        font-size: 1rem;
+    }
+
+    .location-filter select,
+    .location-filter input {
+        font-size: 1rem;
+        padding: 0.6vh;
+        width: 90%;
+        height: 70%;
+    }
+
+    #suggestions-box {
+        width: 80vw;
+        margin-top: 4.5vh;
+    }
+
+    .suggestion-item {
+        font-size: 1rem;
+    }
+
+    #consult-button {
+        font-size: 0.8rem;
+        padding: 1.2vh 3vw;
+        width: auto;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        line-height: 1;
     }
 }
