@@ -279,10 +279,14 @@
           })
           //diferenciacion de rutas
           .then((data) => {
-          if (!data || data.length === 0) {
-            alert("No hay datos en este rango de tiempo dentro del radio seleccionado.");
-            return;
-          }
+            if (!data || data.length === 0) return;
+            const validData = data.filter(point => 
+              !isNaN(parseFloat(point.latitud)) && 
+              !isNaN(parseFloat(point.longitud))
+            );
+            if (validData.length === 0) return;
+            const segments = processRouteSegments(validData, 20000);
+            drawRouteSegments(segments, validData); // ¡Pasar validData!
 
           // Validar coordenadas
           const validData = data.filter(point => 
@@ -380,12 +384,14 @@
         let currentSegment = [];
         let lastTimestamp = null;
 
-        data.forEach((point, index) => {
-          // Validar que las coordenadas sean números válidos
+        // Usar un bucle for tradicional para permitir "continue"
+        for (let index = 0; index < data.length; index++) {
+          const point = data[index];
           const lat = parseFloat(point.latitud);
           const lng = parseFloat(point.longitud);
-          if (isNaN(lat) || isNaN(lng)) continue; // Ignorar puntos inválidos
-
+          if (isNaN(lat) || isNaN(lng)) {
+            continue; // ¡Ahora sí es válido!
+          }
           const timestamp = new Date(point.timestamp);
           if (index === 0) {
             currentSegment.push([lat, lng]);
@@ -400,7 +406,7 @@
             }
             lastTimestamp = timestamp;
           }
-        });
+        }
         if (currentSegment.length > 1) segments.push(currentSegment); // Solo si hay al menos 2 puntos
         return segments;
       }
@@ -442,7 +448,7 @@
               html: '<div style="color: black; font-weight: bold; background: #FFD700; padding: 8px; border-radius: 50%; text-align: center;">A</div>',
               iconSize: [35, 35],
             }),
-          }).bindPopup(`Inicio: ${data[0].timestamp}`).addTo(map);
+          }).bindPopup(`Inicio: ${validSegments[0].timestamp}`).addTo(map);
 
           endMarker = L.marker(lastPoint, {
             icon: L.divIcon({
@@ -450,7 +456,7 @@
               html: '<div style="color: white; font-weight: bold; background: #4B0082; padding: 8px; border-radius: 50%; text-align: center;">B</div>',
               iconSize: [35, 35],
             }),
-          }).bindPopup(`Fin: ${data[data.length - 1].timestamp}`).addTo(map);
+          }).bindPopup(`Fin: ${validSegments[validSegments.length - 1].timestamp}`).addTo(map);
         }
 
         // Ajustar vista al mapa
