@@ -289,10 +289,8 @@
               !isNaN(parseFloat(point.latitud)) && 
               !isNaN(parseFloat(point.longitud))
             );
-            if (validData.length === 0) {
-              alert("No hay datos válidos en este rango de tiempo.");
-              return;
-            }
+            
+            console.log("Datos válidos:", validData);
 
             // Procesar y dibujar segmentos
             const segments = processRouteSegments(validData, 20000);
