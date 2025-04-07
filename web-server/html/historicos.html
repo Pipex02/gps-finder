@@ -405,6 +405,7 @@
         return segments;
       }
 
+
       // Función para dibujar segmentos con colores alternados
       function drawRouteSegments(segments) {
         const colors = ["#32CD32", "#FFD700", "#4B0082", "#004e92"];
@@ -414,16 +415,18 @@
         const validSegments = segments.filter(seg => seg.length >= 2);
 
         validSegments.forEach(coords => {
-          // Validar que todas las coordenadas sean válidas
+          // Validar coordenadas
           if (coords.some(coord => isNaN(coord[0]) || isNaN(coord[1]))) return;
 
           const polyline = L.polyline(coords, {
             color: colors[colorIndex % colors.length],
             weight: 6,
             opacity: 0.8
-          }).addTo(map);
+          }).addTo(map); // ¡Agrega .addTo(map)!
+
           polyline.on('mouseover', () => polyline.setStyle({ opacity: 1 }));
           polyline.on('mouseout', () => polyline.setStyle({ opacity: 0.8 }));
+
           colorIndex++;
         });
 
@@ -433,8 +436,21 @@
           const lastSegment = validSegments[validSegments.length - 1];
           const lastPoint = lastSegment[lastSegment.length - 1];
 
-          startMarker = L.marker(firstPoint, { /* ... */ });
-          endMarker = L.marker(lastPoint, { /* ... */ });
+          startMarker = L.marker(firstPoint, {
+            icon: L.divIcon({
+              className: "custom-marker",
+              html: '<div style="color: black; font-weight: bold; background: #FFD700; padding: 8px; border-radius: 50%; text-align: center;">A</div>',
+              iconSize: [35, 35],
+            }),
+          }).bindPopup(`Inicio: ${data[0].timestamp}`).addTo(map);
+
+          endMarker = L.marker(lastPoint, {
+            icon: L.divIcon({
+              className: "custom-marker",
+              html: '<div style="color: white; font-weight: bold; background: #4B0082; padding: 8px; border-radius: 50%; text-align: center;">B</div>',
+              iconSize: [35, 35],
+            }),
+          }).bindPopup(`Fin: ${data[data.length - 1].timestamp}`).addTo(map);
         }
 
         // Ajustar vista al mapa
