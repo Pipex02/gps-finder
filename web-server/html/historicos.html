@@ -305,7 +305,7 @@
               }
 
               const timeDifference = timestamp - previousTimestamp;
-              if (timeDifference > 10000) {
+              if (timeDifference > 50000) {
                 segments.push(currentSegment);
                 currentSegment = [];
               }
