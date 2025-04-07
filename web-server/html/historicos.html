@@ -413,21 +413,25 @@
           "#FFA500", "#8A2BE2"
         ];
         let colorIndex = 0;
+
+        // Filtrar segmentos válidos
         const validSegments = segments.filter(seg => seg.length >= 2);
 
-
+        // Eliminar solo los marcadores anteriores
+        if (startMarker) map.removeLayer(startMarker);
+        if (endMarker) map.removeLayer(endMarker);
 
         validSegments.forEach((coords, index) => {
-          const color = colors[index % colors.length];
+          const color = colors[index % colors.length]; // Asigna color por segmento
           L.polyline(coords, {
             color: color,
             weight: 6,
             opacity: 0.8
           })
           .addTo(map)
-          .bindPopup(`Ruta ${index + 1}<br>Primera coordenada: ${coords[0].join(", ")}`);
+          .bindPopup(`Ruta ${index + 1}<br>Longitud: ${coords.length} puntos`);
 
-          // Resaltar al pasar el mouse
+          // Eventos
           polyline.on('mouseover', () => polyline.setStyle({ opacity: 1 }));
           polyline.on('mouseout', () => polyline.setStyle({ opacity: 0.8 }));
         });
