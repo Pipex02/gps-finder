@@ -280,26 +280,41 @@
           //diferenciacion de rutas
           .then((data) => {
             if (!data || data.length === 0) {
-              alert("No hay datos en este rango de tiempo dentro del radio seleccionado.");
-              return;
-            }
+            alert("No hay datos en este rango de tiempo dentro del radio seleccionado.");
+            return;
+          }
 
-            // Limpiar capas existentes
-            if (startMarker) map.removeLayer(startMarker);
-            if (endMarker) map.removeLayer(endMarker);
-            if (locationCircle) map.removeLayer(locationCircle);
+          // Validar que todos los puntos tengan coordenadas válidas
+          const validData = data.filter(point => 
+            !isNaN(parseFloat(point.latitud)) && 
+            !isNaN(parseFloat(point.longitud))
+          );
 
-            // Procesar y dibujar segmentos
-            const segments = processRouteSegments(data, 20000); // 20 segundos
-            drawRouteSegments(segments);
+          if (validData.length === 0) {
+            alert("No hay datos válidos en este rango de tiempo.");
+            return;
+          }
 
-            // Dibujar círculo solo con contorno
-            locationCircle = L.circle([lat, lon], {
-              color: "#32CD32",
-              weight: 2,
-              fill: false,
-              radius: parseFloat(radius),
-            }).addTo(map);
+          // Continuar con el procesamiento
+          const segments = processRouteSegments(validData, 20000);
+          drawRouteSegments(segments);
+
+          // Limpiar capas existentes
+          if (startMarker) map.removeLayer(startMarker);
+          if (endMarker) map.removeLayer(endMarker);
+          if (locationCircle) map.removeLayer(locationCircle);
+
+          // Procesar y dibujar segmentos
+          const segments = processRouteSegments(data, 20000); // 20 segundos
+          drawRouteSegments(segments);
+
+          // Dibujar círculo solo con contorno
+          locationCircle = L.circle([lat, lon], {
+            color: "#32CD32",
+            weight: 2,
+            fill: false,
+            radius: parseFloat(radius),
+          }).addTo(map);
           })
           .catch((error) => {
             console.error("Error al obtener datos de ubicación:", error);
@@ -363,39 +378,50 @@
           console.error("Error al cargar la configuración:", error);
         }
       });
-      
+
       // Función para procesar datos y crear segmentos
-      function processRouteSegments(data, maxTimeDiff = 20000) { // 20 segundos por defecto
+      function processRouteSegments(data, maxTimeDiff = 20000) {
         const segments = [];
         let currentSegment = [];
         let lastTimestamp = null;
 
         data.forEach((point, index) => {
+          // Validar que las coordenadas sean números válidos
+          const lat = parseFloat(point.latitud);
+          const lng = parseFloat(point.longitud);
+          if (isNaN(lat) || isNaN(lng)) continue; // Ignorar puntos inválidos
+
           const timestamp = new Date(point.timestamp);
           if (index === 0) {
-            currentSegment.push([parseFloat(point.latitud), parseFloat(point.longitud)]);
+            currentSegment.push([lat, lng]);
             lastTimestamp = timestamp;
           } else {
             const timeDiff = timestamp - lastTimestamp;
             if (timeDiff > maxTimeDiff) {
               segments.push(currentSegment);
-              currentSegment = [[parseFloat(point.latitud), parseFloat(point.longitud)]];
+              currentSegment = [[lat, lng]];
             } else {
-              currentSegment.push([parseFloat(point.latitud), parseFloat(point.longitud)]);
+              currentSegment.push([lat, lng]);
             }
             lastTimestamp = timestamp;
           }
         });
-        if (currentSegment.length > 0) segments.push(currentSegment);
+        if (currentSegment.length > 1) segments.push(currentSegment); // Solo si hay al menos 2 puntos
         return segments;
       }
 
       // Función para dibujar segmentos con colores alternados
       function drawRouteSegments(segments) {
-        const colors = ["#32CD32", "#FFD700", "#4B0082", "#004e92"]; // Colores alternados
+        const colors = ["#32CD32", "#FFD700", "#4B0082", "#004e92"];
         let colorIndex = 0;
 
-        segments.forEach(coords => {
+        // Filtrar segmentos con al menos 2 puntos
+        const validSegments = segments.filter(seg => seg.length >= 2);
+
+        validSegments.forEach(coords => {
+          // Validar que todas las coordenadas sean válidas
+          if (coords.some(coord => isNaN(coord[0]) || isNaN(coord[1]))) return;
+
           const polyline = L.polyline(coords, {
             color: colors[colorIndex % colors.length],
             weight: 6,
@@ -407,31 +433,18 @@
         });
 
         // Actualizar marcadores
-        if (segments.length > 0) {
-          const firstPoint = segments[0][0];
-          const lastSegment = segments[segments.length - 1];
+        if (validSegments.length > 0) {
+          const firstPoint = validSegments[0][0];
+          const lastSegment = validSegments[validSegments.length - 1];
           const lastPoint = lastSegment[lastSegment.length - 1];
 
-          startMarker = L.marker(firstPoint, {
-            icon: L.divIcon({
-              className: "custom-marker",
-              html: '<div style="color: black; font-weight: bold; background: #FFD700; padding: 8px; border-radius: 50%; text-align: center;">A</div>',
-              iconSize: [35, 35],
-            }),
-          }).bindPopup(`Inicio: ${data[0].timestamp}`).addTo(map);
-
-          endMarker = L.marker(lastPoint, {
-            icon: L.divIcon({
-              className: "custom-marker",
-              html: '<div style="color: white; font-weight: bold; background: #4B0082; padding: 8px; border-radius: 50%; text-align: center;">B</div>',
-              iconSize: [35, 35],
-            }),
-          }).bindPopup(`Fin: ${data[data.length - 1].timestamp}`).addTo(map);
+          startMarker = L.marker(firstPoint, { /* ... */ });
+          endMarker = L.marker(lastPoint, { /* ... */ });
         }
 
         // Ajustar vista al mapa
         const bounds = L.latLngBounds();
-        segments.forEach(coords => coords.forEach(coord => bounds.extend(coord)));
+        validSegments.forEach(coords => coords.forEach(coord => bounds.extend(coord)));
         map.fitBounds(bounds);
       }
     </script>
