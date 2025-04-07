@@ -373,19 +373,17 @@
       });
 
       // Función para procesar datos y crear segmentos
-      function processRouteSegments(data, maxTimeDiff = 20000) {
+      function processRouteSegments(data, maxTimeDiff = 20000) { // 20 segundos
         const segments = [];
         let currentSegment = [];
         let lastTimestamp = null;
 
-        // Usar un bucle for tradicional para permitir "continue"
         for (let index = 0; index < data.length; index++) {
           const point = data[index];
           const lat = parseFloat(point.latitud);
           const lng = parseFloat(point.longitud);
-          if (isNaN(lat) || isNaN(lng)) {
-            continue; // ¡Ahora sí es válido!
-          }
+          if (isNaN(lat) || isNaN(lng)) continue;
+
           const timestamp = new Date(point.timestamp);
           if (index === 0) {
             currentSegment.push([lat, lng]);
@@ -393,41 +391,38 @@
           } else {
             const timeDiff = timestamp - lastTimestamp;
             if (timeDiff > maxTimeDiff) {
-              segments.push(currentSegment);
-              currentSegment = [[lat, lng]];
+              segments.push(currentSegment); // Agregar segmento anterior
+              currentSegment = [[lat, lng]]; // Iniciar nuevo segmento
             } else {
               currentSegment.push([lat, lng]);
             }
             lastTimestamp = timestamp;
           }
         }
-        if (currentSegment.length > 1) segments.push(currentSegment); // Solo si hay al menos 2 puntos
+        if (currentSegment.length >= 2) segments.push(currentSegment); // Agregar último segmento
         return segments;
       }
 
 
       // Función para dibujar segmentos con colores alternados
       function drawRouteSegments(segments) {
-        const colors = ["#32CD32", "#FFD700", "#4B0082", "#004e92"];
+        const colors = ["#32CD32", "#FFD700", "#4B0082", "#004e92", "#FF0000"];
         let colorIndex = 0;
-
-        // Filtrar segmentos con al menos 2 puntos
         const validSegments = segments.filter(seg => seg.length >= 2);
 
-        validSegments.forEach(coords => {
-          // Validar coordenadas
-          if (coords.some(coord => isNaN(coord[0]) || isNaN(coord[1]))) return;
-
+        validSegments.forEach((coords, index) => {
+          const color = colors[index % colors.length]; // Asignar color por segmento
           const polyline = L.polyline(coords, {
-            color: colors[colorIndex % colors.length],
+            color: color,
             weight: 6,
             opacity: 0.8
-          }).addTo(map); // ¡Agrega .addTo(map)!
+          }).addTo(map);
 
           polyline.on('mouseover', () => polyline.setStyle({ opacity: 1 }));
           polyline.on('mouseout', () => polyline.setStyle({ opacity: 0.8 }));
 
-          colorIndex++;
+          // Mostrar información al hacer clic
+          polyline.bindPopup(`Ruta ${index + 1}<br>Inicio: ${data[index].timestamp}<br>Fin: ${data[data.length - 1].timestamp}`);
         });
 
         // Actualizar marcadores
@@ -442,7 +437,7 @@
               html: '<div style="color: black; font-weight: bold; background: #FFD700; padding: 8px; border-radius: 50%; text-align: center;">A</div>',
               iconSize: [35, 35],
             }),
-          }).bindPopup(`Inicio: ${validSegments[0].timestamp}`).addTo(map);
+          }).bindPopup("Inicio de la primera ruta").addTo(map);
 
           endMarker = L.marker(lastPoint, {
             icon: L.divIcon({
@@ -450,20 +445,13 @@
               html: '<div style="color: white; font-weight: bold; background: #4B0082; padding: 8px; border-radius: 50%; text-align: center;">B</div>',
               iconSize: [35, 35],
             }),
-          }).bindPopup(`Fin: ${validSegments[validSegments.length - 1].timestamp}`).addTo(map);
+          }).bindPopup("Fin de la última ruta").addTo(map);
         }
 
-        // Ajustar vista al mapa
-        // Ajustar vista al mapa
+        // Ajustar el mapa a los segmentos válidos
         const bounds = L.latLngBounds();
         validSegments.forEach(coords => coords.forEach(coord => bounds.extend(coord)));
-        
-        // ¡VALIDACIÓN ADICIONAL!
-        if (bounds.isValid()) {
-          map.fitBounds(bounds);
-        } else {
-          console.error("No hay coordenadas válidas para ajustar la vista.");
-        }
+        if (bounds.isValid()) map.fitBounds(bounds);
       }
     </script>
   </body>
