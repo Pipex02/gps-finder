@@ -6,11 +6,12 @@
     <title id="page-title">Consulta de Históricos</title>
     <link rel="stylesheet" href="styles2.css" />
     <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+    <link rel="icon" type="image/x-icon" href="/favicon.ico" />
   </head>
   <body>
     <header class="title-container">
       <a href="index.html" id="back-button" class="button">Regresar</a>
-      <img src="perrito.webp" alt="perrito" class="title-image" />
+      <img src="LogoGeoFinder500.webp" alt="logo" class="title-image" />
       <h1 class="title">Históricos</h1>
     </header>
     <div class="content">
@@ -27,7 +28,6 @@
           <br /><br />
           <div class="button-container">
             <button class="button" onclick="consultar()">Consultar</button>
-            <!-- Agrupamos los elementos que se mostrarán después -->
             <div class="location-filter" id="location-filter" style="display: none;">
               <h2>Ciudad:</h2>
               <select id="city-select">
@@ -42,6 +42,10 @@
               <div id="suggestions-box" class="suggestions"></div>
               <input type="number" id="radius-input" placeholder="Radio (m)" min="10" max="5000" />
               <button id="consult-button" class="button" disabled>Consultar Ubicación Específica</button>
+              <h2>Ruta segmentada:</h2>
+              <select id="segment-select" disabled>
+                <option value="">Seleccione una ruta</option>
+              </select>
             </div>
           </div>
         </section>
@@ -75,9 +79,9 @@
         attribution: "© OpenStreetMap contributors",
       }).addTo(map);
 
-      let startMarker, endMarker, locationCircle;
+      let locationCircle;
       const polyline = L.polyline([], { color: "#004e92", weight: 6 }).addTo(map);
-      const filteredPolyline = L.polyline([], { color: "#32CD32", weight: 6 });
+      let segmentLayers = [];
 
       // Configuración inicial de fechas
       const startDateTime = document.getElementById("startDateTime");
@@ -140,7 +144,6 @@
 
       // Consultar la API de históricos
       function consultar() {
-        // Ocultar el contenedor al inicio de una nueva consulta
         document.getElementById("location-filter").style.display = "none";
 
         const startInput = startDateTime.value;
@@ -177,36 +180,10 @@
             polyline.setLatLngs(route);
             if (!map.hasLayer(polyline)) polyline.addTo(map);
 
-            if (startMarker) map.removeLayer(startMarker);
-            if (endMarker) map.removeLayer(endMarker);
             if (locationCircle) map.removeLayer(locationCircle);
-
-            if (route.length > 1) {
-              startMarker = L.marker(route[0], {
-                icon: L.divIcon({
-                  className: "custom-marker",
-                  html: '<div style="color: black; font-weight: bold; background: #FFD700; padding: 8px; border-radius: 50%; text-align: center;">A</div>',
-                  iconSize: [35, 35],
-                }),
-              })
-                .bindPopup(`Inicio: ${data[0].timestamp}`)
-                .addTo(map);
-
-              endMarker = L.marker(route[route.length - 1], {
-                icon: L.divIcon({
-                  className: "custom-marker",
-                  html: '<div style="color: white; font-weight: bold; background: #4B0082; padding: 8px; border-radius: 50%; text-align: center;">B</div>',
-                  iconSize: [35, 35],
-                }),
-              })
-                .bindPopup(`Fin: ${data[data.length - 1].timestamp}`)
-                .addTo(map);
-            }
 
             map.fitBounds(polyline.getBounds());
             habilitarBoton();
-
-            // Mostrar el contenedor de filtro por ubicación
             document.getElementById("location-filter").style.display = "block";
           })
           .catch((error) => {
@@ -250,7 +227,7 @@
         return null;
       }
 
-      // Nueva función para consultar ubicaciones dentro del radio
+      // Consultar ubicaciones dentro del radio
       async function consultarUbicacionEspecifica() {
         const address = document.getElementById("location-input").value;
         const city = document.getElementById("city-select").value;
@@ -293,49 +270,128 @@
             }
 
             const route = data.map((coord) => [parseFloat(coord.latitud), parseFloat(coord.longitud)]);
-            filteredPolyline.setLatLngs(route);
-            if (!map.hasLayer(filteredPolyline)) filteredPolyline.addTo(map);
-
-            if (startMarker) map.removeLayer(startMarker);
-            if (endMarker) map.removeLayer(endMarker);
             if (locationCircle) map.removeLayer(locationCircle);
 
-            if (route.length > 1) {
-              startMarker = L.marker(route[0], {
-                icon: L.divIcon({
-                  className: "custom-marker",
-                  html: '<div style="color: black; font-weight: bold; background: #FFD700; padding: 8px; border-radius: 50%; text-align: center;">A</div>',
-                  iconSize: [35, 35],
-                }),
-              })
-                .bindPopup(`Inicio: ${data[0].timestamp}`)
-                .addTo(map);
-
-              endMarker = L.marker(route[route.length - 1], {
-                icon: L.divIcon({
-                  className: "custom-marker",
-                  html: '<div style="color: white; font-weight: bold; background: #4B0082; padding: 8px; border-radius: 50%; text-align: center;">B</div>',
-                  iconSize: [35, 35],
-                }),
-              })
-                .bindPopup(`Fin: ${data[data.length - 1].timestamp}`)
-                .addTo(map);
-            }
-
-            // Dibujar círculo solo con contorno
             locationCircle = L.circle([lat, lon], {
-              color: "#32CD32", // Verde igual que la polilínea
-              weight: 2, // Grosor del contorno
-              fill: false, // Sin relleno
+              color: "#32CD32",
+              weight: 2,
+              fill: false,
               radius: parseFloat(radius),
             }).addTo(map);
 
-            map.fitBounds(filteredPolyline.getBounds());
+            map.fitBounds(route);
+            mostrarSegmentosRuta(data);
           })
           .catch((error) => {
             console.error("Error al obtener datos de ubicación:", error);
             alert("Error al consultar la API. Intenta de nuevo.");
           });
+      }
+
+      // Segmentación de rutas por tiempo
+      function mostrarSegmentosRuta(data, color = "#32CD32") {
+        segmentLayers.forEach((layer) => map.removeLayer(layer));
+        segmentLayers = [];
+
+        const segmentSelect = document.getElementById("segment-select");
+        segmentSelect.innerHTML = '<option value="">Seleccione una ruta</option>';
+
+        let currentSegment = [];
+        let currentTimestamps = [];
+        const maxTimeDiff = 15 * 60 * 1000; // 15 minutos en milisegundos
+
+        for (let i = 0; i < data.length; i++) {
+          const coord = data[i];
+          const latLng = [parseFloat(coord.latitud), parseFloat(coord.longitud)];
+          const timestamp = coord.timestamp;
+
+          if (i === 0) {
+            currentSegment.push(latLng);
+            currentTimestamps.push(timestamp);
+          } else {
+            const prevTime = new Date(data[i - 1].timestamp);
+            const currTime = new Date(timestamp);
+            const timeDiff = currTime - prevTime;
+
+            if (timeDiff > maxTimeDiff) {
+              agregarSegmento(currentSegment, currentTimestamps, color, segmentLayers.length + 1);
+              currentSegment = [latLng];
+              currentTimestamps = [timestamp];
+            } else {
+              currentSegment.push(latLng);
+              currentTimestamps.push(timestamp);
+            }
+          }
+        }
+
+        if (currentSegment.length > 0) {
+          agregarSegmento(currentSegment, currentTimestamps, color, segmentLayers.length + 1);
+        }
+
+        segmentSelect.disabled = false;
+        segmentLayers.forEach((_, i) => {
+          const opt = document.createElement("option");
+          opt.value = i;
+          opt.textContent = `Ruta ${i + 1}`;
+          segmentSelect.appendChild(opt);
+        });
+
+        segmentSelect.addEventListener("change", () => {
+          const selected = parseInt(segmentSelect.value);
+          segmentLayers.forEach((layerGroup, idx) => {
+            layerGroup.eachLayer((layer) => {
+              // Quitar tooltips de todas las rutas
+              if (layer.getTooltip()) {
+                layer.unbindTooltip();
+              }
+
+              if (idx === selected) {
+                layer.setStyle({ color: "#32CD32", weight: 6 }); // Grosor 6 para la ruta seleccionada
+                layer.bringToFront();
+
+                // Agregar tooltips solo a la ruta seleccionada usando los timestamps almacenados
+                const timestampIdx = layerGroup.getLayers().indexOf(layer);
+                const timestamp = layerGroup.timestamps[timestampIdx];
+                if (timestamp) {
+                  const date = new Date(timestamp);
+                  const formattedTime = date.toLocaleString("es-ES", {
+                    day: "2-digit",
+                    month: "short",
+                    year: "numeric",
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  });
+                  layer.bindTooltip(formattedTime, {
+                    permanent: false,
+                    direction: "top",
+                    className: "timestamp-tooltip",
+                  });
+                }
+              } else {
+                layer.setStyle({ color: "#999999", weight: 3 });
+              }
+            });
+          });
+        });
+      }
+
+      function agregarSegmento(segment, timestamps, color, numero) {
+        const group = L.layerGroup();
+        for (let i = 0; i < segment.length - 1; i++) {
+          const point1 = segment[i];
+          const point2 = segment[i + 1];
+          const tramo = L.polyline([point1, point2], {
+            color,
+            weight: 4,
+            opacity: 0.9,
+          });
+          group.addLayer(tramo);
+        }
+
+        // Almacenar los timestamps en el layerGroup
+        group.timestamps = timestamps.slice(0, segment.length - 1);
+        group.addTo(map);
+        segmentLayers.push(group);
       }
 
       // Inicialización
@@ -344,7 +400,6 @@
           const config = await getConfig();
           const apiKey = config.geoapifyApiKey;
 
-          // Actualizar el título de la página con el valor de APP_TITLE
           if (config.pageTitle) {
             document.getElementById("page-title").textContent = config.pageTitle || "Consulta de Históricos";
           }
@@ -354,7 +409,6 @@
           const citySelect = document.getElementById("city-select");
           const radiusInput = document.getElementById("radius-input");
 
-          // Autocompletado
           locationInput.addEventListener("input", async () => {
             const query = locationInput.value;
             const city = citySelect.value;
@@ -383,7 +437,6 @@
             setTimeout(() => (suggestionsBox.style.display = "none"), 200);
           });
 
-          // Evento para consultar ubicación específica
           consultButton.addEventListener("click", consultarUbicacionEspecifica);
 
           generarElementosDecorativos();
