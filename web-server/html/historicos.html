@@ -80,6 +80,7 @@
       }).addTo(map);
 
       let locationCircle;
+      let startMarker, endMarker; // Variables para los marcadores personalizados
       const polyline = L.polyline([], { color: "#004e92", weight: 6 }).addTo(map);
       let segmentLayers = [];
 
@@ -180,7 +181,32 @@
             polyline.setLatLngs(route);
             if (!map.hasLayer(polyline)) polyline.addTo(map);
 
+            if (startMarker) map.removeLayer(startMarker);
+            if (endMarker) map.removeLayer(endMarker);
             if (locationCircle) map.removeLayer(locationCircle);
+
+            // Añadir marcadores personalizados A y B
+            if (route.length > 1) {
+              startMarker = L.marker(route[0], {
+                icon: L.divIcon({
+                  className: "custom-marker",
+                  html: '<div style="color: black; font-weight: bold; background: #28A745; padding: 8px; border-radius: 50%; text-align: center;">A</div>',
+                  iconSize: [35, 35],
+                }),
+              })
+                .bindPopup(`Inicio: ${data[0].timestamp}`)
+                .addTo(map);
+
+              endMarker = L.marker(route[route.length - 1], {
+                icon: L.divIcon({
+                  className: "custom-marker",
+                  html: '<div style="color: white; font-weight: bold; background: #DC3545; padding: 8px; border-radius: 50%; text-align: center;">B</div>',
+                  iconSize: [35, 35],
+                }),
+              })
+                .bindPopup(`Fin: ${data[data.length - 1].timestamp}`)
+                .addTo(map);
+            }
 
             map.fitBounds(polyline.getBounds());
             habilitarBoton();
@@ -346,7 +372,7 @@
               }
 
               if (idx === selected) {
-                layer.setStyle({ color: "#32CD32", weight: 6 }); // Grosor 6 para la ruta seleccionada
+                layer.setStyle({ color: "#32CD32", weight: 6 });
                 layer.bringToFront();
 
                 // Agregar tooltips solo a la ruta seleccionada usando los timestamps almacenados
@@ -354,6 +380,7 @@
                 const timestamp = layerGroup.timestamps[timestampIdx];
                 if (timestamp) {
                   const date = new Date(timestamp);
+                  date.setHours(date.getHours() + 5); // Ajustar a UTC-5
                   const formattedTime = date.toLocaleString("es-ES", {
                     day: "2-digit",
                     month: "short",
@@ -409,6 +436,8 @@
           const citySelect = document.getElementById("city-select");
           const radiusInput = document.getElementById("radius-input");
 
+          // Comentado temporalmente el autocompletado de Geoapify
+          /*
           locationInput.addEventListener("input", async () => {
             const query = locationInput.value;
             const city = citySelect.value;
@@ -432,6 +461,7 @@
             });
             suggestionsBox.style.display = suggestions.length > 0 ? "block" : "none";
           });
+          */
 
           locationInput.addEventListener("blur", () => {
             setTimeout(() => (suggestionsBox.style.display = "none"), 200);
