@@ -15,6 +15,14 @@
         <img src="LogoGeoFinder500.webp" alt="Logo" class="title-image">
         <h1 class="title">Geo Finder</h1>
     </header>
+    <div class="popup" id="welcome-popup">
+        <div class="popup-content">
+            <span class="popup-close" id="welcome-close">&times;</span>
+            <h2>¡Bienvenido a Geo Finder!</h2>
+            <p>Esta página te permite visualizar tu ubicación actual en un mapa, ver una variable cambiante en tiempo real, y consultar históricos de rutas pasadas. 🚀</p>
+        </div>
+    </div>
+    
     <div class="content">
         <div id="map-container">
             <div id="map"></div>
@@ -39,7 +47,7 @@
             <div class="card variable-card">
                 <div class="head">
                     Variable Cambiante
-                    <span class="info-icon fa-solid fa-circle-info" data-popup="location-popup"></span>
+                    <span class="info-icon fa-solid fa-circle-info" data-popup="variable-popup"></span>
                 </div>
                 <div class="card-content">
                     <p><span id="variable_cambiante">Obteniendo...</span></p>
@@ -51,7 +59,7 @@
                 <img src="alien.webp" alt="Alien" class="alien">
                 <div class="head">
                     Históricos
-                    <span class="info-icon fa-solid fa-circle-info" data-popup="location-popup"></span>
+                    <span class="info-icon fa-solid fa-circle-info" data-popup="history-popup"></span>
                 </div>
                 <div class="card-content">
                     <p>Acá podrás consultar rutas en los días deseados</p>
@@ -213,5 +221,21 @@
             });
         });
     </script>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const welcomePopup = document.getElementById("welcome-popup");
+        const closeBtn = document.getElementById("welcome-close");
+
+        // Mostrar el popup de bienvenida
+        welcomePopup.style.display = "flex";
+
+        // Cerrar el popup al hacer clic en la X
+        closeBtn.addEventListener("click", () => {
+            welcomePopup.style.display = "none";
+        });
+    });
+</script>
+
 </body>
 </html>
