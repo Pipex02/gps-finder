@@ -229,8 +229,14 @@
         const welcomePopup = document.getElementById("welcome-popup");
         const closeBtn = document.getElementById("welcome-close");
 
-        // Mostrar el popup de bienvenida
-        welcomePopup.style.display = "flex";
+        // Verificar si el popup ya ha sido mostrado
+        if (!localStorage.getItem('welcomeShown')) {
+            // Mostrar el popup de bienvenida si es la primera vez
+            welcomePopup.style.display = "flex";
+
+            // Marcar como mostrado en localStorage
+            localStorage.setItem('welcomeShown', 'true');
+        }
 
         // Cerrar el popup al hacer clic en la X
         closeBtn.addEventListener("click", () => {
@@ -238,6 +244,7 @@
         });
     });
 </script>
+
 
 </body>
 </html>
