@@ -7,6 +7,7 @@
     <link rel="stylesheet" href="styles2.css" />
     <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
     <link rel="icon" type="image/x-icon" href="/favicon.ico" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
   </head>
   <body>
     <header class="title-container">
@@ -21,15 +22,20 @@
       <div class="info">
         <section class="card datetime-card">
           <h2>Fecha y hora de inicio:</h2>
+          <span class="info-icon fa-solid fa-circle-info" data-popup="inicio-popup"></span>
           <input type="datetime-local" id="startDateTime" />
           <br /><br />
           <h2>Fecha y hora de fin:</h2>
+          <span class="info-icon fa-solid fa-circle-info" data-popup="fin-popup"></span>
           <input type="datetime-local" id="endDateTime" />
           <br /><br />
           <div class="button-container">
             <button class="button" onclick="consultar()">Consultar</button>
             <div class="location-filter" id="location-filter" style="display: none;">
-              <h2>Ciudad:</h2>
+              <h2>Ciudad:
+              
+              </h2>
+              
               <select id="city-select">
                 <option value="Barranquilla" selected>Barranquilla</option>
                 <option value="Bogotá">Bogotá</option>
@@ -37,18 +43,52 @@
                 <option value="Cali">Cali</option>
                 <option value="Cartagena">Cartagena</option>
               </select>
-              <br /><br />
-              <input type="text" id="location-input" placeholder="Ingrese ubicación" />
-              <div id="suggestions-box" class="suggestions"></div>
-              <input type="number" id="radius-input" placeholder="Radio (m)" min="10" max="5000" />
+              <br />
+              
+
+              <br />
+              <input type="text" id="location-input" placeholder="Ingrese ubicación" 
+              />
+              
+              <div id="suggestions-box" class="suggestions">
+              
+              </div>
+              <input type="number" id="radius-input" placeholder="Radio (m)" min="10" max="5000" 
+              
+              />
+              
               <button id="consult-button" class="button" disabled>Consultar Ubicación Específica</button>
-              <h2>Ruta segmentada:</h2>
+              <h2>Ruta segmentada:
+              
+              </h2>
+              
               <select id="segment-select" disabled>
                 <option value="">Seleccione una ruta</option>
               </select>
             </div>
           </div>
         </section>
+
+        <div class="popup" id="inicio-popup">
+          <div class="popup-content">
+              <span class="popup-close">×</span>
+              <h2>Fecha y hora de inicio:</h2>
+              <p>Aquí escoge la fecha y hora inicial para la ruta que deseas consultar.</p>
+          </div>
+      </div>
+
+        <div class="popup" id="fin-popup">
+          <div class="popup-content">
+              <span class="popup-close">×</span>
+              <h2>Fecha y hora de fin:</h2>
+              <p>Aquí escoge la fecha y hora final para la ruta que deseas consultar.</p>
+          </div>
+      </div>
+
+      
+
+
+      
       </div>
     </div>
 
@@ -478,5 +518,28 @@
         }
       });
     </script>
+    <script>
+      document.querySelectorAll('.info-icon').forEach(icon => {
+          icon.addEventListener('click', () => {
+              const popupId = icon.getAttribute('data-popup');
+              document.getElementById(popupId).style.display = 'block';
+          });
+      });
+  
+      document.querySelectorAll('.popup-close').forEach(close => {
+          close.addEventListener('click', () => {
+              close.closest('.popup').style.display = 'none';
+          });
+      });
+  
+      // Cerrar popup si se hace clic fuera del contenido
+      window.addEventListener('click', (e) => {
+          document.querySelectorAll('.popup').forEach(popup => {
+              if (e.target === popup) {
+                  popup.style.display = 'none';
+              }
+          });
+      });
+  </script>
   </body>
 </html>
