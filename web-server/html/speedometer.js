@@ -166,10 +166,11 @@ document.addEventListener('DOMContentLoaded', function() {
         if (typeof speedValue !== 'number' || isNaN(speedValue)) {
             speedValue = 0;
         }
+        // Para la aguja, se limita a 100 (maxSpeedometerValue), pero el texto mostrará el valor real
         const clampedSpeed = Math.max(0, Math.min(maxSpeedometerValue, speedValue));
         const angle = (clampedSpeed / maxSpeedometerValue) * angleRange;
         needle.setAttribute("transform", `rotate(${angle}, 100, 100)`);
-        speedValueText.textContent = `${Math.round(clampedSpeed)} km/h`;
+        speedValueText.textContent = `${Math.round(speedValue)} km/h`;
     }
 
     // Llamada a la API en el endpoint: '/api//coordenadas'
