@@ -134,7 +134,7 @@
     <script src="speedometer.js"></script>
     <script>
         async function getConfig() {
-            const response = await fetch('/api/config'); // <-- CÁMBIALO A LA URL COMPLETA DE TU API
+            const response = await fetch('/api/config'); 
             if (!response.ok) throw new Error("Error al obtener la configuración");
             const config = await response.json();
             return config;
@@ -167,7 +167,7 @@
 
         async function obtenerCoordenadasDesdeAPI() {
             try {
-                const respuesta = await fetch('/api//coordenadas'); // <-- CÁMBIALO A LA URL COMPLETA DE TU API
+                const respuesta = await fetch('/api/coordenadas'); 
                 if (!respuesta.ok) {
                     throw new Error('Error al obtener datos de la API');
                 }
