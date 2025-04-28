@@ -22,39 +22,63 @@
             <p>Esta página te permite visualizar tu ubicación actual en un mapa, ver una variable cambiante en tiempo real, y consultar históricos de rutas pasadas. 🚀</p>
         </div>
     </div>
-    
+
     <div class="content">
         <div id="map-container">
             <div id="map"></div>
+            <div class="location-info-container">
+                <div class="card location-card-individual">
+                    <div class="head">
+                        Latitud
+                    </div>
+                    <div class="card-content">
+                        <p><span id="latitud">Obteniendo...</span></p>
+                    </div>
+                </div>
+
+                <div class="card location-card-individual">
+                    <div class="head">
+                        Longitud
+                    </div>
+                    <div class="card-content">
+                        <p><span id="longitud">Obteniendo...</span></p>
+                    </div>
+                </div>
+
+                <div class="card location-card-individual">
+                    <div class="head">
+                        Tiempo
+                    </div>
+                    <div class="card-content">
+                        <p><span id="timestamp">Obteniendo...</span></p>
+                    </div>
+                </div>
+            </div>
         </div>
         <div class="info">
 
-            <!-- Tarjeta de Coordenadas -->
-            <div class="card location-card">
-                <img src="AstronautaPixelArt-2.webp" alt="Astronauta" class="astronaut">
-                <div class="head">
-                    Coordenadas
-                    <span class="info-icon fa-solid fa-circle-info" data-popup="location-popup"></span>
-                </div>
-                <div class="card-content">
-                    <p><strong>Latitud:</strong> <span id="latitud">Obteniendo...</span></p>
-                    <p><strong>Longitud:</strong> <span id="longitud">Obteniendo...</span></p>
-                    <p><strong>Estampa de Tiempo:</strong> <span id="timestamp">Obteniendo...</span></p>
-                </div>
-            </div>
-
-            <!-- Tarjeta de Variable Cambiante -->
             <div class="card variable-card">
                 <div class="head">
-                    Variable Cambiante
+                    Gasolina
                     <span class="info-icon fa-solid fa-circle-info" data-popup="variable-popup"></span>
                 </div>
                 <div class="card-content">
-                    <p><span id="variable_cambiante">Próximamente</span></p>
+                    <p><span id="gasolina">Obteniendo</span></p>
                 </div>
             </div>
 
-            <!-- Tarjeta de Históricos -->
+        
+
+            <div class="card variable-card">
+                <div class="head">
+                    Velocidad
+                    <span class="info-icon fa-solid fa-circle-info" data-popup="velocity-popup"></span>
+                </div>
+                <div class="card-content">
+                    <p><span id="Velocidad">Obteniendo</span></p>
+                </div>
+            </div>
+
             <div class="card history-card">
                 <img src="alien.webp" alt="Alien" class="alien">
                 <div class="head">
@@ -67,7 +91,6 @@
                 </div>
             </div>
 
-            <!-- Pop-ups -->
             <div class="popup" id="location-popup">
                 <div class="popup-content">
                     <span class="popup-close">×</span>
@@ -79,13 +102,22 @@
             <div class="popup" id="variable-popup">
                 <div class="popup-content">
                     <span class="popup-close">×</span>
-                    <h2>Variable Cambiante</h2>
-                    <p>🛰️ Próximamente podrás rastrear una variable cambiante en tiempo real. 🙂<br>
-                        Esta sección mostrará información dinámica.</p>
-                        
+                    <h2>Gasolina</h2>
+                    <p>
+                        ⛽🚗 Aquí podrás consultar el nivel de gasolina de tu vehículo en tiempo real📊. 🙂
+                    </p>
                 </div>
             </div>
 
+            <div class="popup" id="velocity-popup">
+                <div class="popup-content">
+                    <span class="popup-close">×</span>
+                    <h2>Velocidad</h2>
+                    <p>
+                        🚗💨⏱️ Aquí podrás consultar la velocidad de tu vehículo en tiempo real 📊. 🙂
+                    </p>
+                </div>
+            </div>
             <div class="popup" id="history-popup">
                 <div class="popup-content">
                     <span class="popup-close">×</span>
@@ -97,11 +129,12 @@
         </div>
     </div>
 
-    <!-- Scripts de Leaflet y API -->
     <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+    <script src="progress-bar.js"></script>
+    <script src="speedometer.js"></script>
     <script>
         async function getConfig() {
-            const response = await fetch('/api/config');
+            const response = await fetch('/api/config'); 
             if (!response.ok) throw new Error("Error al obtener la configuración");
             const config = await response.json();
             return config;
@@ -110,7 +143,7 @@
         document.addEventListener("DOMContentLoaded", async () => {
             try {
                 const config = await getConfig();
-                
+
                 // Actualizar el título de la página con el valor de APP_TITLE
                 if (config.pageTitle) {
                     document.getElementById('page-title').textContent = config.pageTitle || "Geo Finder";
@@ -134,7 +167,7 @@
 
         async function obtenerCoordenadasDesdeAPI() {
             try {
-                const respuesta = await fetch('/api/coordenadas');
+                const respuesta = await fetch('/api/coordenadas'); 
                 if (!respuesta.ok) {
                     throw new Error('Error al obtener datos de la API');
                 }
@@ -143,13 +176,13 @@
                 if (datos.latitud && datos.longitud && datos.timestamp) {
                     document.getElementById("latitud").innerText = datos.latitud;
                     document.getElementById("longitud").innerText = datos.longitud;
-                    
+
                     function formatearTimestamp(timestamp) {
                         return timestamp.replace("T", " ").split(".")[0];
                     }
 
                     document.getElementById("timestamp").innerText = formatearTimestamp(datos.timestamp);
-                    
+
                     var lat = parseFloat(datos.latitud);
                     var lon = parseFloat(datos.longitud);
 
@@ -179,7 +212,7 @@
         // Obtener ubicación al cargar y actualizar cada 5 segundos
         obtenerCoordenadasDesdeAPI();
         setInterval(obtenerCoordenadasDesdeAPI, 5000);
-    </script>  
+    </script>
     <script>
         // Generar muchas estrellas
         for (let i = 0; i < 100; i++) {
@@ -207,13 +240,13 @@
                 document.getElementById(popupId).style.display = 'block';
             });
         });
-    
+
         document.querySelectorAll('.popup-close').forEach(close => {
             close.addEventListener('click', () => {
                 close.closest('.popup').style.display = 'none';
             });
         });
-    
+
         // Cerrar popup si se hace clic fuera del contenido
         window.addEventListener('click', (e) => {
             document.querySelectorAll('.popup').forEach(popup => {

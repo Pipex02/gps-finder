@@ -28,8 +28,10 @@ db.connect((err) => {
 
 // Ruta para obtener la última coordenada a través de la API REST
 app.get("/coordenadas", (req, res) => {
-    const query = "SELECT latitud, longitud, timestamp FROM coordenadas ORDER BY id DESC LIMIT 1";
+    // Consulta para seleccionar la última fila por ID descendente
+    const query = "SELECT latitud, longitud, timestamp, velocidad, gasolina FROM coordenadas ORDER BY id DESC LIMIT 1";
 
+    // Ejecutar la consulta a la base de datos
     db.query(query, (err, results) => {
         if (err) {
             console.error("❌ Error al obtener datos:", err);
@@ -40,7 +42,9 @@ app.get("/coordenadas", (req, res) => {
                 res.json({
                     latitud: parseFloat(data.latitud).toFixed(5),
                     longitud: parseFloat(data.longitud).toFixed(5),
-                    timestamp: data.timestamp
+                    timestamp: data.timestamp,
+                    velocidad: parseFloat(data.velocidad),
+                    gasolina: parseFloat(data.gasolina)
                 });
             } else {
                 res.json({});
