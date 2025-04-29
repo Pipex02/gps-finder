@@ -16,26 +16,57 @@
       <h1 class="title">Históricos</h1>
     </header>
     <div class="content">
+      <!-- Contenedor exclusivo para el mapa -->
       <div id="map-container">
         <div id="map"></div>
       </div>
+      
+      <!-- Contenedor de información: tarjetas variables y controles -->
       <div class="info">
+        <!-- Tarjetas: ahora se ubican aquí y dejan el mapa libre -->
+        <div class="cards-container">
+          <!-- Tarjeta para Gasolina: el progress-bar se inyectará en #gasolina-container -->
+          <div class="card variable-card">
+            <div class="head">
+              <span class="info-icon fa-solid fa-circle-info" data-popup="variable-popup"></span>
+            </div>
+            <div class="card-content" id="gasolina-container">
+              <!-- progress-bar-h.js insertará aquí su contenido -->
+            </div>
+          </div>
+          <!-- Tarjeta para Velocidad: el speedometer se inyectará en #velocidad-container -->
+          <div class="card variable-card">
+            <div class="head">
+              <span class="info-icon fa-solid fa-circle-info" data-popup="velocity-popup"></span>
+            </div>
+            <div class="card-content" id="velocidad-container">
+              <!-- speedometer-h.js insertará aquí su contenido -->
+            </div>
+          </div>
+        </div>
+
+        <!-- Controles para fechas y otros filtros -->
         <section class="card datetime-card">
-          <h2>Fecha y hora de inicio:</h2>
-          <span class="info-icon fa-solid fa-circle-info" data-popup="inicio-popup"></span>
+          <h2 >
+            <span> Fecha y hora inicial:</span>
+        
+            <span class="info-icon fa-solid fa-circle-info" data-popup="inicio-popup"></span>
+          </h2>
+      
           <input type="datetime-local" id="startDateTime" />
           <br /><br />
-          <h2>Fecha y hora de fin:</h2>
-          <span class="info-icon fa-solid fa-circle-info" data-popup="fin-popup"></span>
+          <h2 >
+            <span> Fecha y hora final:</span>
+        
+            <span class="info-icon fa-solid fa-circle-info" data-popup="inicio-popup"></span>
+          </h2>
+          
           <input type="datetime-local" id="endDateTime" />
           <br /><br />
           <div class="button-container">
             <button class="button" onclick="consultar()">Consultar</button>
             <div class="location-filter" id="location-filter" style="display: none;">
-              <h2>Ciudad:
-              
-              </h2>
-              
+              <h2>Ciudad:</h2>
               <select id="city-select">
                 <option value="Barranquilla" selected>Barranquilla</option>
                 <option value="Bogotá">Bogotá</option>
@@ -43,25 +74,12 @@
                 <option value="Cali">Cali</option>
                 <option value="Cartagena">Cartagena</option>
               </select>
-              <br />
-              
-
-              <br />
-              <input type="text" id="location-input" placeholder="Ingrese ubicación" 
-              />
-              
-              <div id="suggestions-box" class="suggestions">
-              
-              </div>
-              <input type="number" id="radius-input" placeholder="Radio (m)" min="10" max="5000" 
-              
-              />
-              
+              <br /><br />
+              <input type="text" id="location-input" placeholder="Ingrese ubicación" />
+              <div id="suggestions-box" class="suggestions"></div>
+              <input type="number" id="radius-input" placeholder="Radio (m)" min="10" max="5000" />
               <button id="consult-button" class="button" disabled>Consultar Ubicación Específica</button>
-              <h2>Ruta segmentada:
-              
-              </h2>
-              
+              <h2>Ruta segmentada:</h2>
               <select id="segment-select" disabled>
                 <option value="">Seleccione una ruta</option>
               </select>
@@ -69,28 +87,42 @@
           </div>
         </section>
 
+        <!-- Popups -->
         <div class="popup" id="inicio-popup">
           <div class="popup-content">
-              <span class="popup-close">×</span>
-              <h2>Fecha y hora de inicio:</h2>
-              <p>Aquí escoge la fecha y hora inicial para la ruta que deseas consultar.</p>
+            <span class="popup-close">×</span>
+            <h2>Fecha y hora de inicio:</h2>
+            <p>Aquí escoge la fecha y hora inicial para la ruta que deseas consultar.</p>
           </div>
-      </div>
-
+        </div>
         <div class="popup" id="fin-popup">
           <div class="popup-content">
-              <span class="popup-close">×</span>
-              <h2>Fecha y hora de fin:</h2>
-              <p>Aquí escoge la fecha y hora final para la ruta que deseas consultar.</p>
+            <span class="popup-close">×</span>
+            <h2>Fecha y hora de fin:</h2>
+            <p>Aquí escoge la fecha y hora final para la ruta que deseas consultar.</p>
           </div>
-      </div>
-
-      
-
-
-      
+        </div>
+        <div class="popup" id="variable-popup">
+          <div class="popup-content">
+            <span class="popup-close">×</span>
+            <h2>Gasolina</h2>
+            <p>⛽🚗 Porcentaja de gasolina gastado en la ruta 📊. 🙂</p>
+          </div>
+        </div>
+        <div class="popup" id="velocity-popup">
+          <div class="popup-content">
+            <span class="popup-close">×</span>
+            <h2>Velocidad</h2>
+            <p>🚗💨⏱️ Velocidad a lo largo del recorrido 📊. 🙂</p>
+          </div>
+        </div>
       </div>
     </div>
+
+
+
+    <script src="progress-bar-h.js"></script>
+    <script src="speedometer-h.js"></script>
 
     <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
     <script>
@@ -112,6 +144,7 @@
           document.body.appendChild(meteor);
         }
       }
+      generarElementosDecorativos();
 
       // Inicializar el mapa
       const map = L.map("map").setView([10.99385, -74.79261], 12);
