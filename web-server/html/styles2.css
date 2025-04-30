@@ -22,7 +22,7 @@ header {
 .title-image {
     margin: 10px;
     height: 90%;
-} 
+}
 
 h1 {
     font-size: 3em;
@@ -57,32 +57,87 @@ h1 {
 }
 
 #map-container {
-    width: 67%;
-    height: 80vh;
-    margin-left: 1vw;
-}
-
-#map {
-    width: 100%;
+    width: 90%;
     height: 100%;
-    border-radius: 2vw;
-    box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.2);
-}
-
-.info {
+    margin-left: 1vw;
     display: flex;
     flex-direction: column;
     align-items: center;
 }
 
+#map {
+    width: 100%;
+    height: 105%;   
+    border-radius: 2vw;
+    box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.cards-container {
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    align-items: center;
+    font-size: 0.8em;
+    line-height: 1.5;
+    margin-top: -2vh;
+}
+
+.card-content p {
+    margin: 0vh 0;
+}
+
+#variable_cambiante {
+    color: #ffffff;
+}
+
+.variable-card {
+    background: #000428;
+    border: 0.3vw solid #004e92;
+    height: 19vh;
+    box-shadow: 0.5vw 0.5vw 0 #013665;
+    padding: 1vh 1vw;
+    text-align: center;
+    color: #ffffff;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    min-width: 18%;
+    flex-grow: 1;
+    margin: 2.5vh 0.5vw;
+    box-sizing: border-box;
+}
+
+
+
+.variable-card .card-content {
+    font-size: 0.9em;
+}
+
+.variable-card .info-icon {
+    position: relative;
+    font-size: 2.5em;   
+    margin-left: 0.5vw;
+    color: #ffffff;
+    top: -15px;        
+}
+
+info {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+   
+}
+
 .card {
     font-family: 'Press Start 2P', cursive;
     font-size: 0.5rem;
-    width: 20vw;
+    width: 0.9vw;
+    height: 17vh;
     max-width: 25vw;
-    background: #002b5e;
+    background: #03061f;
     border: 0.3vw solid #000428;
-    box-shadow: 0.5vw 0.5vw 0 #004e92;
+    box-shadow: 0.5vw 0.5vw 0 #1a2481;
     padding: 2vh;
     text-align: center;
     color: #00aaff;
@@ -96,7 +151,7 @@ h1 {
     position: relative;
     width: 20vw;
     max-width: 25vw;
-    height: 100%;
+    height: 60%;
     background: #000428;
     border: 0.3vw solid #000428;
     box-shadow: 0.4vw 0.4vw 0 #004e92;
@@ -106,8 +161,16 @@ h1 {
     display: flex;
     flex-direction: column;
     align-items: center;
-    margin-left: 5vw;  
+    margin-left: 2vw;  
+    margin-right: 2vw;
 }
+
+.vertical-header {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 0.5em; /* Espacio entre las líneas */
+  }
 
 input[type="datetime-local"] {
     font-family: 'Press Start 2P', cursive;
@@ -122,16 +185,13 @@ input[type="datetime-local"] {
     max-width: 250px;
     text-align: center;
     transition: transform 0.2s ease, box-shadow 0.2s ease;
-  }
+}
   
-  input[type="datetime-local"]:focus {
+input[type="datetime-local"]:focus {
     outline: none;
     transform: scale(1.02);
     box-shadow: 0 0 10px #00aaff, 0.3rem 0.3rem 0 #004e92;
-  }
-
-  
-  
+}
 
 .button-container {
     display: flex;
@@ -280,8 +340,9 @@ input[type="datetime-local"] {
 .info-icon {
     color: #fbfbfb;
     cursor: pointer;
-    margin-left: 300px;
-    font-size: 3em;
+    margin-left: 0.5vw;
+    margin-top: 0.2em;
+    font-size: 1.5em;
 }
 
 /* Estilo del popup */
@@ -359,19 +420,7 @@ input[type="datetime-local"] {
     color: #000;
 }
 
-.head {
-    font-size: 1rem;
-    font-weight: bold;
-    background: #00aaff;
-    padding: 0.625rem; 
-    text-align: center;
-    color: #000428;
-    border-bottom: 0.25rem solid #000428; 
-    margin-left: -0.9vw;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-}
+
 
 .card-content p {
     margin: 0;
@@ -387,7 +436,6 @@ input[type="datetime-local"] {
     box-shadow: 0 0 5px white;
     border-radius: 50%;
     animation: twinkle 2s infinite alternate;
-    z-index: 1;
 }
 
 @keyframes twinkle {
@@ -404,7 +452,6 @@ input[type="datetime-local"] {
     transform: rotate(-30deg);
     opacity: 0;
     animation: shooting 3s infinite linear;
-    z-index: 1;
 }
 
 @keyframes shooting {
