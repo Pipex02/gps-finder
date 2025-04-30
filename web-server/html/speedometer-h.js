@@ -124,7 +124,7 @@ document.addEventListener('DOMContentLoaded', function() {
     speedValueText.setAttribute("x", "100");
     speedValueText.setAttribute("y", "80");
     speedValueText.setAttribute("text-anchor", "middle");
-    speedValueText.setAttribute("font-size", "20"); // Se aumenta de 16 a 20
+    speedValueText.setAttribute("font-size", "20"); 
     speedValueText.setAttribute("font-weight", "bold");
     speedValueText.classList.add("speedometer-value-text");
     speedValueText.textContent = "0 km/h";
@@ -177,7 +177,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // Llamada a la API en el endpoint: '/api//coordenadas'
-    const apiEndpoint = '/api//coordenadas';
+    const apiEndpoint = '/api/coordenadas';
 
     async function fetchVelocidad() {
         try {

@@ -58,7 +58,7 @@
           <h2 >
             <span> Fecha y hora final:</span>
         
-            <span class="info-icon fa-solid fa-circle-info" data-popup="inicio-popup"></span>
+            <span class="info-icon fa-solid fa-circle-info" data-popup="fin-popup"></span>
           </h2>
           
           <input type="datetime-local" id="endDateTime" />
@@ -106,7 +106,7 @@
           <div class="popup-content">
             <span class="popup-close">×</span>
             <h2>Gasolina</h2>
-            <p>⛽🚗 Porcentaja de gasolina gastado en la ruta 📊. 🙂</p>
+            <p>⛽🚗 Porcentaje de gasolina gastado en la ruta 📊. 🙂</p>
           </div>
         </div>
         <div class="popup" id="velocity-popup">
@@ -397,7 +397,7 @@
 
         let currentSegment = [];
         let currentTimestamps = [];
-        const maxTimeDiff = 15 * 60 * 1000; // 15 minutos en milisegundos
+        const maxTimeDiff = 15 * 60 * 1000; 
 
         for (let i = 0; i < data.length; i++) {
           const coord = data[i];
