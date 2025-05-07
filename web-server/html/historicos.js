@@ -23,6 +23,8 @@ let locationCircle; // Círculo para el radio de búsqueda por proximidad
 let startMarker, endMarker; // Marcadores para inicio y fin de la ruta principal
 let polyline; // Polilínea para la ruta principal
 let segmentLayers = []; // Capas para los segmentos de ruta (de la búsqueda por proximidad)
+let currentSegmentPointsForSlider = []; // Stores points of the currently selected segment for the slider
+let sliderMarker = null; // Marker for the slider's current position
 
 let clickedLat = null; // Latitud del punto clickeado en el mapa
 let clickedLng = null; // Longitud del punto clickeado en el mapa
@@ -35,6 +37,10 @@ const consultButton = document.getElementById("consult-button"); // Botón "Cons
 const radiusInput = document.getElementById("radius-input");
 const segmentSelect = document.getElementById("segment-select");
 const locationFilterDiv = document.getElementById("location-filter");
+const routeSliderContainer = document.getElementById('route-slider-container');
+const routeSlider = document.getElementById('route-slider');
+const sliderTimestampSpan = document.getElementById('slider-timestamp');
+
 
 // Configuración inicial de fechas
 const minDate = new Date("2025-03-25T00:00:00");
@@ -100,6 +106,12 @@ function actualizarRestricciones() {
 // Consultar la API de históricos (ruta principal)
 function consultar() {
   if (locationFilterDiv) locationFilterDiv.style.display = "none"; // Ocultar inicialmente
+  if (routeSliderContainer) routeSliderContainer.style.display = 'none';
+  if (sliderMarker) {
+    map.removeLayer(sliderMarker);
+    sliderMarker = null;
+  }
+  currentSegmentPointsForSlider = [];
 
   const startInput = startDateTime.value;
   const endInput = endDateTime.value;
@@ -131,8 +143,14 @@ function consultar() {
     map.removeLayer(locationCircle);
     locationCircle = null;
   }
-  segmentLayers.forEach((layer) => map.removeLayer(layer));
+  // segmentLayers.forEach((layer) => map.removeLayer(layer)); // This was removing the L.LayerGroup
+  segmentLayers.forEach(segmentData => { // segmentData is {points:[], layer: L.LayerGroup, color:''}
+      if (segmentData.layer && map.hasLayer(segmentData.layer)) {
+          map.removeLayer(segmentData.layer);
+      }
+  });
   segmentLayers = [];
+
   if (segmentSelect) {
     segmentSelect.innerHTML = '<option value="">Seleccione una ruta</option>';
     segmentSelect.disabled = true;
@@ -207,12 +225,12 @@ async function getConfig() {
     const response = await fetch("/api/config");
     if (!response.ok) {
         console.warn(`Error al obtener la configuración: ${response.statusText}`);
-        return {}; // Devuelve un objeto vacío o configuración por defecto si falla
+        return {}; 
     }
     return await response.json();
   } catch (error) {
     console.warn("Excepción al obtener la configuración:", error);
-    return {}; // Devuelve un objeto vacío en caso de excepción de red, etc.
+    return {}; 
   }
 }
 
@@ -247,6 +265,12 @@ async function consultarUbicacionEspecifica() {
     map.removeLayer(locationCircle);
     locationCircle = null;
   }
+  if (routeSliderContainer) routeSliderContainer.style.display = 'none';
+  if (sliderMarker) {
+    map.removeLayer(sliderMarker);
+    sliderMarker = null;
+  }
+  currentSegmentPointsForSlider = [];
 
   fetch(`https://geofind-fe.ddns.net/api/lugar?latitud=${clickedLat}&longitud=${clickedLng}&radio=${radius}&inicio=${encodeURIComponent(startFormatted)}&fin=${encodeURIComponent(endFormatted)}`)
     .then((response) => {
@@ -263,7 +287,7 @@ async function consultarUbicacionEspecifica() {
     .then((data) => {
       if (!data || data.length === 0) {
         alert("No hay datos en este rango de tiempo dentro del radio seleccionado para la ubicación clickeada.");
-        mostrarSegmentosRuta([]); // Limpia segmentos
+        mostrarSegmentosRuta([]); 
         return;
       }
 
@@ -279,14 +303,23 @@ async function consultarUbicacionEspecifica() {
     })
     .catch((error) => {
       console.error("Error al obtener datos de ubicación específica:", error.message);
-      // El alert ya se maneja en la parte de !response.ok
     });
 }
 
 // Segmentación de rutas por tiempo
 function mostrarSegmentosRuta(data, defaultColor = "#32CD32") {
-  segmentLayers.forEach((layer) => map.removeLayer(layer));
+  segmentLayers.forEach(segmentData => {
+      if (segmentData.layer && map.hasLayer(segmentData.layer)) {
+          map.removeLayer(segmentData.layer);
+      }
+  });
   segmentLayers = [];
+  currentSegmentPointsForSlider = []; 
+  if (routeSliderContainer) routeSliderContainer.style.display = 'none'; 
+  if (sliderMarker) {
+    map.removeLayer(sliderMarker);
+    sliderMarker = null;
+  }
 
   if (segmentSelect) {
     segmentSelect.innerHTML = '<option value="">Seleccione una ruta</option>';
@@ -303,7 +336,7 @@ function mostrarSegmentosRuta(data, defaultColor = "#32CD32") {
 
   for (let i = 0; i < data.length; i++) {
     const coord = data[i];
-    const latLng = [parseFloat(coord.latitud), parseFloat(coord.longitud)];
+    const latLng = L.latLng(parseFloat(coord.latitud), parseFloat(coord.longitud)); // Use L.latLng
     const timestamp = coord.timestamp;
 
     if (i === 0) {
@@ -334,7 +367,11 @@ function mostrarSegmentosRuta(data, defaultColor = "#32CD32") {
   if (segmentSelect) {
     if (segmentLayers.length > 0) {
         segmentSelect.disabled = false;
-        segmentLayers.forEach((_, i) => {
+        // Clear previous options except the first one
+        while (segmentSelect.options.length > 1) {
+            segmentSelect.remove(1);
+        }
+        segmentLayers.forEach((_, i) => { 
         const opt = document.createElement("option");
         opt.value = i;
         opt.textContent = `Segmento ${i + 1}`;
@@ -350,15 +387,20 @@ function mostrarSegmentosRuta(data, defaultColor = "#32CD32") {
 function agregarSegmento(segmentPoints, timestamps, color) {
   const group = L.layerGroup();
   
-  const segmentPolyline = L.polyline(segmentPoints, {
+  const segmentPolyline = L.polyline(segmentPoints, { // segmentPoints are already L.latLng objects
     color: color, 
     weight: 5,    
     opacity: 0.8,
   });
   group.addLayer(segmentPolyline);
   
-  segmentPoints.forEach((point, index) => {
-    const marker = L.circleMarker(point, {
+  const pointsWithTimestamps = segmentPoints.map((point, index) => ({ // point is L.latLng
+    latlng: point, // Store L.latLng directly
+    timestamp: timestamps[index]
+  }));
+
+  segmentPoints.forEach((point, index) => { // point is L.latLng
+    const marker = L.circleMarker(point, { // Use L.latLng directly
         radius: 3,
         fillColor: color,
         color: color,
@@ -385,7 +427,7 @@ function agregarSegmento(segmentPoints, timestamps, color) {
   });
 
   group.addTo(map);
-  segmentLayers.push(group);
+  segmentLayers.push({ points: pointsWithTimestamps, layer: group, color: color });
 }
 
 
@@ -413,6 +455,47 @@ window.addEventListener('click', (e) => {
     });
 });
 
+function updateSliderMarker(index) {
+  if (!currentSegmentPointsForSlider || currentSegmentPointsForSlider.length === 0 || index < 0 || index >= currentSegmentPointsForSlider.length) {
+      if (sliderTimestampSpan) sliderTimestampSpan.textContent = '';
+      return;
+  }
+
+  const pointData = currentSegmentPointsForSlider[index];
+  const latLng = pointData.latlng; // This is already an L.latLng object
+
+  if (sliderMarker) {
+      sliderMarker.setLatLng(latLng);
+  } else {
+      sliderMarker = L.circleMarker(latLng, {
+          radius: 8,
+          fillColor: "#FF0000", 
+          color: "#FFFFFF",
+          weight: 2,
+          opacity: 1,
+          fillOpacity: 0.9,
+          pane: 'markerPane' 
+      }).addTo(map);
+  }
+  sliderMarker.bringToFront();
+
+  if (sliderTimestampSpan) {
+      if (pointData.timestamp) {
+          const originalDate = new Date(pointData.timestamp);
+          // Add 5 hours for Colombia time adjustment
+          const adjustedDate = new Date(originalDate.getTime() + (5 * 60 * 60 * 1000));
+          sliderTimestampSpan.textContent = adjustedDate.toLocaleTimeString("es-CO", { 
+              // Using toLocaleTimeString for just the time part, assuming date is not needed here
+              // or use toLocaleString if date part is also desired with the adjustment.
+              hour: "2-digit", minute: "2-digit", second: "2-digit",
+              // timeZone: "America/Bogota" // More robust if server time is UTC
+          });
+      } else {
+          sliderTimestampSpan.textContent = `Punto ${index + 1}`;
+      }
+  }
+}
+
 
 // Inicialización
 document.addEventListener("DOMContentLoaded", async () => {
@@ -433,8 +516,8 @@ document.addEventListener("DOMContentLoaded", async () => {
         clickedMarker = L.marker([clickedLat, clickedLng], {
             icon: L.divIcon({
                 className: 'clicked-location-marker',
-                html: '<i class="fa-solid fa-location-dot fa-2x" style="color: #FF0000;"></i>', // FontAwesome icon, larger
-                iconSize: [32, 32], // Adjusted size
+                html: '<i class="fa-solid fa-location-dot fa-2x" style="color: #FF0000;"></i>', 
+                iconSize: [32, 32], 
                 iconAnchor: [16, 32] 
             })
         }).addTo(map)
@@ -447,12 +530,23 @@ document.addEventListener("DOMContentLoaded", async () => {
             map.removeLayer(locationCircle);
             locationCircle = null;
         }
-        segmentLayers.forEach((layer) => map.removeLayer(layer));
+        // segmentLayers.forEach((layer) => map.removeLayer(layer)); // Incorrect way to remove
+        segmentLayers.forEach(segmentData => {
+            if (segmentData.layer && map.hasLayer(segmentData.layer)) {
+                map.removeLayer(segmentData.layer);
+            }
+        });
         segmentLayers = [];
         if (segmentSelect) {
             segmentSelect.innerHTML = '<option value="">Seleccione una ruta</option>';
             segmentSelect.disabled = true;
         }
+        if (routeSliderContainer) routeSliderContainer.style.display = 'none';
+        if (sliderMarker) {
+            map.removeLayer(sliderMarker);
+            sliderMarker = null;
+        }
+        currentSegmentPointsForSlider = [];
     });
 
     const config = await getConfig();
@@ -468,18 +562,48 @@ document.addEventListener("DOMContentLoaded", async () => {
     if (segmentSelect) {
         segmentSelect.addEventListener("change", () => {
             const selectedIndex = parseInt(segmentSelect.value);
-            segmentLayers.forEach((layerGroup, idx) => {
-                layerGroup.eachLayer(subLayer => { 
+            segmentLayers.forEach((segmentData, idx) => { 
+                segmentData.layer.eachLayer(subLayer => { 
                     if (subLayer instanceof L.Polyline) { 
                         if (idx === selectedIndex) {
                             subLayer.setStyle({ color: "#00FF00", weight: 7, opacity: 1 }); 
                             subLayer.bringToFront();
                         } else {
-                            subLayer.setStyle({ color: "#32CD32", weight: 5, opacity: 0.8 }); 
+                            subLayer.setStyle({ color: segmentData.color || "#32CD32", weight: 5, opacity: 0.8 }); 
                         }
                     }
                 });
             });
+
+            if (selectedIndex >= 0 && selectedIndex < segmentLayers.length) {
+                currentSegmentPointsForSlider = segmentLayers[selectedIndex].points;
+                if (currentSegmentPointsForSlider && currentSegmentPointsForSlider.length > 0) {
+                    routeSlider.min = 0;
+                    routeSlider.max = currentSegmentPointsForSlider.length - 1;
+                    routeSlider.value = 0;
+                    if (routeSliderContainer) routeSliderContainer.style.display = 'flex';
+                    updateSliderMarker(0);
+                } else {
+                    if (routeSliderContainer) routeSliderContainer.style.display = 'none';
+                    if (sliderMarker) {
+                        map.removeLayer(sliderMarker);
+                        sliderMarker = null;
+                    }
+                }
+            } else {
+                if (routeSliderContainer) routeSliderContainer.style.display = 'none';
+                currentSegmentPointsForSlider = [];
+                if (sliderMarker) {
+                    map.removeLayer(sliderMarker);
+                    sliderMarker = null;
+                }
+            }
+        });
+    }
+
+    if (routeSlider) {
+        routeSlider.addEventListener('input', function() {
+            updateSliderMarker(parseInt(this.value));
         });
     }
 
