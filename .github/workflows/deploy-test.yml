@@ -1,0 +1,54 @@
+name: Deploy to Test Environments
+
+on:
+  push:
+    branches:
+      - dev-an
+      - dev-ally
+      - dev-ha
+      - dev-fe
+
+jobs:
+  deploy-test:
+    strategy:
+      matrix:
+        include:
+          - branch: dev-an
+            runner: test
+          - branch: dev-ally
+            runner: al-test
+          - branch: dev-ha
+            runner: test
+          - branch: dev-fe
+            runner: ec2-fe-test
+    name: Deploy to Test Environment (${{ matrix.branch }})
+    runs-on: [self-hosted, ${{ matrix.runner }}]
+    if: github.ref == format('refs/heads/{0}', matrix.branch)
+    steps:
+      - name: Checkout del código
+        uses: actions/checkout@v4
+
+      - name: Copiar variables de entorno
+        run: |
+          cp ~/backup/gps-finder/.env-test ${{ github.workspace }}/.env || exit 1
+          echo "✅ Variables de entorno copiadas."
+
+      - name: Desplegar frontend
+        run: |
+          sudo mkdir -p /var/www/gps-finder-test/html/
+          sudo rsync -av ${{ github.workspace }}/web-server/html/ /var/www/gps-finder-test/html/ || exit 1
+          sudo chown -R www-data:www-data /var/www/gps-finder-test/html
+          sudo chmod -R 755 /var/www/gps-finder-test/html
+          echo "✅ Frontend desplegado."
+
+      - name: Instalar dependencias
+        working-directory: ${{ github.workspace }}/api-rest
+        run: |
+          npm install || exit 1
+          echo "✅ Dependencias instaladas."
+
+      - name: Reiniciar servicios
+        run: |
+          sudo systemctl restart api-rest-test || exit 1
+          sudo systemctl restart sniffer-udp || exit 1
+          echo "✅ Servicios reiniciados."
