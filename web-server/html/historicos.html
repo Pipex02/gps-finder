@@ -19,6 +19,10 @@
       <!-- Contenedor exclusivo para el mapa -->
       <div id="map-container">
         <div id="map"></div>
+        <div id="route-slider-container" style="display: none;">
+          <input type="range" id="route-slider" min="0" max="0" value="0" />
+          <span id="slider-timestamp"></span>
+        </div>
       </div>
       
       <!-- Contenedor de información: tarjetas variables y controles -->
@@ -66,19 +70,10 @@
           <div class="button-container">
             <button class="button" onclick="consultar()">Consultar</button>
             <div class="location-filter" id="location-filter" style="display: none;">
-              <h2>Ciudad:</h2>
-              <select id="city-select">
-                <option value="Barranquilla" selected>Barranquilla</option>
-                <option value="Bogotá">Bogotá</option>
-                <option value="Medellín">Medellín</option>
-                <option value="Cali">Cali</option>
-                <option value="Cartagena">Cartagena</option>
-              </select>
+              <p>Haga clic en el mapa</p>
               <br /><br />
-              <input type="text" id="location-input" placeholder="Ingrese ubicación" />
-              <div id="suggestions-box" class="suggestions"></div>
-              <input type="number" id="radius-input" placeholder="Radio (m)" min="10" max="5000" />
-              <button id="consult-button" class="button" disabled>Consultar Ubicación Específica</button>
+              <input type="number" id="radius-input" placeholder="Radio (m)" min="10" max="5000"/>
+              <button id="consult-button" class="button" disabled>Consultar</button>
               <h2>Ruta segmentada:</h2>
               <select id="segment-select" disabled>
                 <option value="">Seleccione una ruta</option>

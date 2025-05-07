@@ -17,18 +17,26 @@ function generarElementosDecorativos() {
   }
 }
 
-// Inicializar el mapa (Declaración movida dentro de DOMContentLoaded)
+// Mapa y variables globales relacionadas con el mapa y la selección
 let map;
-let locationCircle;
-let startMarker, endMarker; // Variables para los marcadores personalizados
-let polyline; // Declaración movida dentro de DOMContentLoaded
-let segmentLayers = [];
+let locationCircle; // Círculo para el radio de búsqueda por proximidad
+let startMarker, endMarker; // Marcadores para inicio y fin de la ruta principal
+let polyline; // Polilínea para la ruta principal
+let segmentLayers = []; // Capas para los segmentos de ruta (de la búsqueda por proximidad)
 
-// Configuración inicial de fechas
+let clickedLat = null; // Latitud del punto clickeado en el mapa
+let clickedLng = null; // Longitud del punto clickeado en el mapa
+let clickedMarker = null; // Marcador para el punto clickeado en el mapa
+
+// Elementos del DOM
 const startDateTime = document.getElementById("startDateTime");
 const endDateTime = document.getElementById("endDateTime");
-const consultButton = document.getElementById("consult-button");
+const consultButton = document.getElementById("consult-button"); // Botón "Consultar Ubicación Específica"
+const radiusInput = document.getElementById("radius-input");
+const segmentSelect = document.getElementById("segment-select");
+const locationFilterDiv = document.getElementById("location-filter");
 
+// Configuración inicial de fechas
 const minDate = new Date("2025-03-25T00:00:00");
 const today = new Date();
 today.setHours(0, 0, 0, 0);
@@ -55,6 +63,7 @@ startDateTime.addEventListener("change", () => {
     adjustedEnd.setMinutes(adjustedEnd.getMinutes() + 1);
     endDateTime.value = toLocalISOString(adjustedEnd);
   }
+  actualizarRestricciones();
 });
 
 endDateTime.addEventListener("change", () => {
@@ -65,13 +74,18 @@ endDateTime.addEventListener("change", () => {
     adjustedEnd.setMinutes(adjustedEnd.getMinutes() + 1);
     endDateTime.value = toLocalISOString(adjustedEnd);
   }
+  actualizarRestricciones();
 });
 
-// Funciones de control del botón
-const inhabilitarBoton = () => (consultButton.disabled = true);
-const habilitarBoton = () => (consultButton.disabled = false);
+// Funciones de control del botón "Consultar Ubicación Específica"
+const inhabilitarBotonConsultarEspecifica = () => {
+    if (consultButton) consultButton.disabled = true;
+};
+const habilitarBotonConsultarEspecifica = () => {
+    if (consultButton) consultButton.disabled = false;
+};
 
-// Actualizar restricciones de fechas
+// Actualizar restricciones y estado de botones
 function actualizarRestricciones() {
   const startValue = startDateTime.value;
   if (startValue) {
@@ -80,12 +94,12 @@ function actualizarRestricciones() {
       endDateTime.value = startValue;
     }
   }
-  inhabilitarBoton();
+  inhabilitarBotonConsultarEspecifica(); // Deshabilitar al cambiar fechas
 }
 
-// Consultar la API de históricos
+// Consultar la API de históricos (ruta principal)
 function consultar() {
-  document.getElementById("location-filter").style.display = "none";
+  if (locationFilterDiv) locationFilterDiv.style.display = "none"; // Ocultar inicialmente
 
   const startInput = startDateTime.value;
   const endInput = endDateTime.value;
@@ -105,15 +119,44 @@ function consultar() {
   const startFormatted = `${startInput.replace("T", " ")}:00`;
   const endFormatted = `${endInput.replace("T", " ")}:00`;
 
-  fetch(`/api/historicos?inicio=${encodeURIComponent(startFormatted)}&fin=${encodeURIComponent(endFormatted)}`)
+  // Limpiar estado de selección por click y resultados anteriores de proximidad
+  if (clickedMarker) {
+    map.removeLayer(clickedMarker);
+    clickedMarker = null;
+  }
+  clickedLat = null;
+  clickedLng = null;
+
+  if (locationCircle) {
+    map.removeLayer(locationCircle);
+    locationCircle = null;
+  }
+  segmentLayers.forEach((layer) => map.removeLayer(layer));
+  segmentLayers = [];
+  if (segmentSelect) {
+    segmentSelect.innerHTML = '<option value="">Seleccione una ruta</option>';
+    segmentSelect.disabled = true;
+  }
+  if (radiusInput) {
+    radiusInput.value = "";
+  }
+  inhabilitarBotonConsultarEspecifica();
+
+
+  fetch(`https://geofind-fe.ddns.net/api/historicos?inicio=${encodeURIComponent(startFormatted)}&fin=${encodeURIComponent(endFormatted)}`)
     .then((response) => {
       if (!response.ok) throw new Error("Error en la respuesta de la API");
       return response.json();
     })
     .then((data) => {
+      if (startMarker) map.removeLayer(startMarker);
+      if (endMarker) map.removeLayer(endMarker);
+      startMarker = null;
+      endMarker = null;
+
       if (!data || data.length === 0) {
         alert("No hay datos en este rango de tiempo.");
-        inhabilitarBoton();
+        if (polyline) polyline.setLatLngs([]);
         return;
       }
 
@@ -121,12 +164,7 @@ function consultar() {
       polyline.setLatLngs(route);
       if (!map.hasLayer(polyline)) polyline.addTo(map);
 
-      if (startMarker) map.removeLayer(startMarker);
-      if (endMarker) map.removeLayer(endMarker);
-      if (locationCircle) map.removeLayer(locationCircle);
-
-      // Añadir marcadores personalizados A y B
-      if (route.length > 1) {
+      if (route.length > 0) {
         startMarker = L.marker(route[0], {
           icon: L.divIcon({
             className: "custom-marker",
@@ -137,134 +175,131 @@ function consultar() {
           .bindPopup(`Inicio: ${data[0].timestamp}`)
           .addTo(map);
 
-        endMarker = L.marker(route[route.length - 1], {
-          icon: L.divIcon({
-            className: "custom-marker",
-            html: '<div style="color: white; font-weight: bold; background: #DC3545; padding: 8px; border-radius: 50%; text-align: center;">B</div>',
-            iconSize: [35, 35],
-          }),
-        })
-          .bindPopup(`Fin: ${data[data.length - 1].timestamp}`)
-          .addTo(map);
+        if (route.length > 1) {
+            endMarker = L.marker(route[route.length - 1], {
+            icon: L.divIcon({
+                className: "custom-marker",
+                html: '<div style="color: white; font-weight: bold; background: #DC3545; padding: 8px; border-radius: 50%; text-align: center;">B</div>',
+                iconSize: [35, 35],
+            }),
+            })
+            .bindPopup(`Fin: ${data[data.length - 1].timestamp}`)
+            .addTo(map);
+        }
       }
 
       map.fitBounds(polyline.getBounds());
-      habilitarBoton();
-      document.getElementById("location-filter").style.display = "block";
+      if (locationFilterDiv) locationFilterDiv.style.display = "block";
     })
     .catch((error) => {
       console.error("Error al obtener datos históricos:", error);
-      inhabilitarBoton();
       alert("Error al consultar la API. Intenta de nuevo.");
+      if (polyline) polyline.setLatLngs([]);
+      if (startMarker) map.removeLayer(startMarker);
+      if (endMarker) map.removeLayer(endMarker);
+      startMarker = null;
+      endMarker = null;
     });
 }
 
-// Funciones de Geoapify
 async function getConfig() {
-  const response = await fetch("/api/config");
-  if (!response.ok) throw new Error("Error al obtener la configuración");
-  const config = await response.json();
-  return config;
-}
-
-async function fetchAutocomplete(query, city, apiKey) {
-  const response = await fetch(
-    `https://api.geoapify.com/v1/geocode/autocomplete?text=${encodeURIComponent(query)}&city=${encodeURIComponent(city)}&limit=4&apiKey=${apiKey}`
-  );
-  const data = await response.json();
-  return data.features.map((feature) => ({
-    label: feature.properties.formatted,
-    lat: feature.properties.lat,
-    lon: feature.properties.lon,
-  }));
-}
-
-async function fetchCoordinates(address, city, apiKey) {
-  const response = await fetch(
-    `https://api.geoapify.com/v1/geocode/search?text=${encodeURIComponent(address)}&city=${encodeURIComponent(city)}&limit=1&apiKey=${apiKey}`
-  );
-  const data = await response.json();
-  if (data.features.length > 0) {
-    return {
-      lat: data.features[0].properties.lat,
-      lon: data.features[0].properties.lon,
-    };
+  try {
+    const response = await fetch("/api/config");
+    if (!response.ok) {
+        console.warn(`Error al obtener la configuración: ${response.statusText}`);
+        return {}; // Devuelve un objeto vacío o configuración por defecto si falla
+    }
+    return await response.json();
+  } catch (error) {
+    console.warn("Excepción al obtener la configuración:", error);
+    return {}; // Devuelve un objeto vacío en caso de excepción de red, etc.
   }
-  return null;
 }
 
-// Consultar ubicaciones dentro del radio
+
+// Consultar ubicaciones dentro del radio usando coordenadas del click
 async function consultarUbicacionEspecifica() {
-  const address = document.getElementById("location-input").value;
-  const city = document.getElementById("city-select").value;
-  const radius = document.getElementById("radius-input").value;
-  const config = await getConfig();
-  const apiKey = config.geoapifyApiKey;
-
-  if (!address || !radius) {
-    alert("Por favor, ingrese una ubicación y un radio.");
+  if (clickedLat === null || clickedLng === null) {
+    alert("Por favor, seleccione una ubicación en el mapa haciendo clic.");
     return;
   }
 
-  const coords = await fetchCoordinates(address, city, apiKey);
-  if (!coords) {
-    alert("Ubicación no encontrada.");
+  const radiusValue = radiusInput.value;
+  if (!radiusValue || isNaN(parseFloat(radiusValue)) || parseFloat(radiusValue) < 10 || parseFloat(radiusValue) > 5000) {
+    alert("Por favor, ingrese un radio válido entre 10 y 5000 metros.");
+    if (radiusInput) radiusInput.focus();
     return;
   }
+  const radius = parseFloat(radiusValue);
 
-  const { lat, lon } = coords;
   const startInput = startDateTime.value;
   const endInput = endDateTime.value;
 
   if (!startInput || !endInput) {
-    alert("Selecciona ambas fechas y horas.");
+    alert("Selecciona ambas fechas y horas para la consulta por proximidad.");
     return;
   }
 
   const startFormatted = `${startInput.replace("T", " ")}:00`;
   const endFormatted = `${endInput.replace("T", " ")}:00`;
 
-  fetch(`/api/lugar?latitud=${lat}&longitud=${lon}&radio=${radius}&inicio=${encodeURIComponent(startFormatted)}&fin=${encodeURIComponent(endFormatted)}`)
+  if (locationCircle) {
+    map.removeLayer(locationCircle);
+    locationCircle = null;
+  }
+
+  fetch(`https://geofind-fe.ddns.net/api/lugar?latitud=${clickedLat}&longitud=${clickedLng}&radio=${radius}&inicio=${encodeURIComponent(startFormatted)}&fin=${encodeURIComponent(endFormatted)}`)
     .then((response) => {
-      if (!response.ok) throw new Error("Error en la respuesta de la API");
+      if (!response.ok) {
+        response.json().then(err => {
+            alert(`Error en la API de proximidad: ${err.message || response.statusText}`);
+        }).catch(() => {
+            alert(`Error en la API de proximidad: ${response.statusText}`);
+        });
+        throw new Error("Error en API de proximidad");
+      }
       return response.json();
     })
     .then((data) => {
       if (!data || data.length === 0) {
-        alert("No hay datos en este rango de tiempo dentro del radio seleccionado.");
+        alert("No hay datos en este rango de tiempo dentro del radio seleccionado para la ubicación clickeada.");
+        mostrarSegmentosRuta([]); // Limpia segmentos
         return;
       }
 
-      const route = data.map((coord) => [parseFloat(coord.latitud), parseFloat(coord.longitud)]);
-      if (locationCircle) map.removeLayer(locationCircle);
-
-      locationCircle = L.circle([lat, lon], {
-        color: "#32CD32",
+      locationCircle = L.circle([clickedLat, clickedLng], {
+        color: "#FFD700", 
         weight: 2,
-        fill: false,
-        radius: parseFloat(radius),
+        fillColor: "#FFD700",
+        fillOpacity: 0.2,
+        radius: radius,
       }).addTo(map);
 
-      map.fitBounds(route);
       mostrarSegmentosRuta(data);
     })
     .catch((error) => {
-      console.error("Error al obtener datos de ubicación:", error);
-      alert("Error al consultar la API. Intenta de nuevo.");
+      console.error("Error al obtener datos de ubicación específica:", error.message);
+      // El alert ya se maneja en la parte de !response.ok
     });
 }
 
 // Segmentación de rutas por tiempo
-function mostrarSegmentosRuta(data, color = "#32CD32") {
+function mostrarSegmentosRuta(data, defaultColor = "#32CD32") {
   segmentLayers.forEach((layer) => map.removeLayer(layer));
   segmentLayers = [];
 
-  const segmentSelect = document.getElementById("segment-select");
-  segmentSelect.innerHTML = '<option value="">Seleccione una ruta</option>';
+  if (segmentSelect) {
+    segmentSelect.innerHTML = '<option value="">Seleccione una ruta</option>';
+  }
 
-  let currentSegment = [];
-  let currentTimestamps = [];
-  const maxTimeDiff = 15 * 60 * 1000;
+  if (!data || data.length === 0) {
+    if (segmentSelect) segmentSelect.disabled = true;
+    return;
+  }
+
+  let currentSegmentPoints = [];
+  let currentSegmentTimestamps = [];
+  const maxTimeDiff = 15 * 60 * 1000; 
 
   for (let i = 0; i < data.length; i++) {
     const coord = data[i];
@@ -272,110 +307,104 @@ function mostrarSegmentosRuta(data, color = "#32CD32") {
     const timestamp = coord.timestamp;
 
     if (i === 0) {
-      currentSegment.push(latLng);
-      currentTimestamps.push(timestamp);
+      currentSegmentPoints.push(latLng);
+      currentSegmentTimestamps.push(timestamp);
     } else {
       const prevTime = new Date(data[i - 1].timestamp);
       const currTime = new Date(timestamp);
       const timeDiff = currTime - prevTime;
 
       if (timeDiff > maxTimeDiff) {
-        agregarSegmento(currentSegment, currentTimestamps, color, segmentLayers.length + 1);
-        currentSegment = [latLng];
-        currentTimestamps = [timestamp];
+        if (currentSegmentPoints.length > 1) {
+            agregarSegmento(currentSegmentPoints, currentSegmentTimestamps, defaultColor);
+        }
+        currentSegmentPoints = [latLng]; 
+        currentSegmentTimestamps = [timestamp];
       } else {
-        currentSegment.push(latLng);
-        currentTimestamps.push(timestamp);
+        currentSegmentPoints.push(latLng);
+        currentSegmentTimestamps.push(timestamp);
       }
     }
   }
 
-  if (currentSegment.length > 0) {
-    agregarSegmento(currentSegment, currentTimestamps, color, segmentLayers.length + 1);
+  if (currentSegmentPoints.length > 1) {
+    agregarSegmento(currentSegmentPoints, currentSegmentTimestamps, defaultColor);
   }
 
-  segmentSelect.disabled = false;
-  segmentLayers.forEach((_, i) => {
-    const opt = document.createElement("option");
-    opt.value = i;
-    opt.textContent = `Ruta ${i + 1}`;
-    segmentSelect.appendChild(opt);
-  });
-
-  segmentSelect.addEventListener("change", () => {
-    const selected = parseInt(segmentSelect.value);
-    segmentLayers.forEach((layerGroup, idx) => {
-      layerGroup.eachLayer((layer) => {
-        // Quitar tooltips de todas las rutas
-        if (layer.getTooltip()) {
-          layer.unbindTooltip();
-        }
-
-        if (idx === selected) {
-          layer.setStyle({ color: "#32CD32", weight: 6 });
-          layer.bringToFront();
-
-          // Agregar tooltips solo a la ruta seleccionada usando los timestamps almacenados
-          const timestampIdx = layerGroup.getLayers().indexOf(layer);
-          const timestamp = layerGroup.timestamps[timestampIdx];
-          if (timestamp) {
-            const date = new Date(timestamp);
-            date.setHours(date.getHours() + 5); // Ajustar a UTC-5
-            const formattedTime = date.toLocaleString("es-ES", {
-              day: "2-digit",
-              month: "short",
-              year: "numeric",
-              hour: "2-digit",
-              minute: "2-digit",
-            });
-            layer.bindTooltip(formattedTime, {
-              permanent: false,
-              direction: "top",
-              className: "timestamp-tooltip",
-            });
-          }
-        } else {
-          layer.setStyle({ color: "#999999", weight: 3 });
-        }
-      });
-    });
-  });
+  if (segmentSelect) {
+    if (segmentLayers.length > 0) {
+        segmentSelect.disabled = false;
+        segmentLayers.forEach((_, i) => {
+        const opt = document.createElement("option");
+        opt.value = i;
+        opt.textContent = `Segmento ${i + 1}`;
+        segmentSelect.appendChild(opt);
+        });
+    } else {
+        segmentSelect.disabled = true;
+    }
+  }
 }
 
-function agregarSegmento(segment, timestamps, color, numero) {
-  const group = L.layerGroup();
-  for (let i = 0; i < segment.length - 1; i++) {
-    const point1 = segment[i];
-    const point2 = segment[i + 1];
-    const tramo = L.polyline([point1, point2], {
-      color,
-      weight: 4,
-      opacity: 0.9,
-    });
-    group.addLayer(tramo);
-  }
 
-  // Almacenar los timestamps en el layerGroup
-  group.timestamps = timestamps.slice(0, segment.length - 1);
+function agregarSegmento(segmentPoints, timestamps, color) {
+  const group = L.layerGroup();
+  
+  const segmentPolyline = L.polyline(segmentPoints, {
+    color: color, 
+    weight: 5,    
+    opacity: 0.8,
+  });
+  group.addLayer(segmentPolyline);
+  
+  segmentPoints.forEach((point, index) => {
+    const marker = L.circleMarker(point, {
+        radius: 3,
+        fillColor: color,
+        color: color,
+        weight: 1,
+        opacity: 1,
+        fillOpacity: 0.8
+    });
+    if (timestamps[index]) {
+        const date = new Date(timestamps[index]);
+        const formattedTime = date.toLocaleString("es-CO", { 
+            day: "2-digit",
+            month: "short",
+            year: "numeric",
+            hour: "2-digit",
+            minute: "2-digit",
+        });
+        marker.bindTooltip(formattedTime, {
+            permanent: false,
+            direction: "top",
+            className: "timestamp-tooltip",
+        });
+    }
+    group.addLayer(marker);
+  });
+
   group.addTo(map);
   segmentLayers.push(group);
 }
+
 
 // Manejo de Popups
 document.querySelectorAll('.info-icon').forEach(icon => {
     icon.addEventListener('click', () => {
         const popupId = icon.getAttribute('data-popup');
-        document.getElementById(popupId).style.display = 'block';
+        const popupElement = document.getElementById(popupId);
+        if (popupElement) popupElement.style.display = 'block';
     });
 });
 
 document.querySelectorAll('.popup-close').forEach(close => {
     close.addEventListener('click', () => {
-        close.closest('.popup').style.display = 'none';
+        const popup = close.closest('.popup');
+        if (popup) popup.style.display = 'none';
     });
 });
 
-// Cerrar popup si se hace clic fuera del contenido
 window.addEventListener('click', (e) => {
     document.querySelectorAll('.popup').forEach(popup => {
         if (e.target === popup) {
@@ -388,64 +417,78 @@ window.addEventListener('click', (e) => {
 // Inicialización
 document.addEventListener("DOMContentLoaded", async () => {
   try {
-    // Inicializar el mapa dentro del DOMContentLoaded
-    map = L.map("map").setView([10.99385, -74.79261], 12);
+    map = L.map("map").setView([10.99385, -74.79261], 12); 
     L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
       attribution: "© OpenStreetMap contributors",
     }).addTo(map);
     polyline = L.polyline([], { color: "#004e92", weight: 6 }).addTo(map);
 
+    map.on('click', function(e) {
+        clickedLat = e.latlng.lat;
+        clickedLng = e.latlng.lng;
+
+        if (clickedMarker) {
+            map.removeLayer(clickedMarker);
+        }
+        clickedMarker = L.marker([clickedLat, clickedLng], {
+            icon: L.divIcon({
+                className: 'clicked-location-marker',
+                html: '<i class="fa-solid fa-location-dot fa-2x" style="color: #FF0000;"></i>', // FontAwesome icon, larger
+                iconSize: [32, 32], // Adjusted size
+                iconAnchor: [16, 32] 
+            })
+        }).addTo(map)
+            .bindPopup(`Ubicación seleccionada:<br>Lat: ${clickedLat.toFixed(5)}<br>Lng: ${clickedLng.toFixed(5)}`)
+            .openPopup();
+
+        habilitarBotonConsultarEspecifica(); 
+        
+        if (locationCircle) {
+            map.removeLayer(locationCircle);
+            locationCircle = null;
+        }
+        segmentLayers.forEach((layer) => map.removeLayer(layer));
+        segmentLayers = [];
+        if (segmentSelect) {
+            segmentSelect.innerHTML = '<option value="">Seleccione una ruta</option>';
+            segmentSelect.disabled = true;
+        }
+    });
 
     const config = await getConfig();
-    const apiKey = config.geoapifyApiKey;
-
-    if (config.pageTitle) {
-      document.getElementById("page-title").textContent = config.pageTitle || "Consulta de Históricos";
+    if (config && config.pageTitle) {
+      const pageTitleElement = document.getElementById("page-title");
+      if (pageTitleElement) pageTitleElement.textContent = config.pageTitle;
+    }
+    
+    if (consultButton) {
+        consultButton.addEventListener("click", consultarUbicacionEspecifica);
     }
 
-    const locationInput = document.getElementById("location-input");
-    const suggestionsBox = document.getElementById("suggestions-box");
-    const citySelect = document.getElementById("city-select");
-    const radiusInput = document.getElementById("radius-input");
-
-    // Comentado temporalmente el autocompletado de Geoapify
-    /*
-    locationInput.addEventListener("input", async () => {
-      const query = locationInput.value;
-      const city = citySelect.value;
-      if (query.length < 7) {
-        suggestionsBox.style.display = "none";
-        return;
-      }
-
-      const suggestions = await fetchAutocomplete(query, city, apiKey);
-      suggestionsBox.innerHTML = "";
-      suggestions.forEach((suggestion, index) => {
-        const div = document.createElement("div");
-        div.className = "suggestion-item";
-        div.textContent = suggestion.label;
-        div.dataset.index = index;
-        div.addEventListener("click", () => {
-          locationInput.value = suggestion.label;
-          suggestionsBox.style.display = "none";
+    if (segmentSelect) {
+        segmentSelect.addEventListener("change", () => {
+            const selectedIndex = parseInt(segmentSelect.value);
+            segmentLayers.forEach((layerGroup, idx) => {
+                layerGroup.eachLayer(subLayer => { 
+                    if (subLayer instanceof L.Polyline) { 
+                        if (idx === selectedIndex) {
+                            subLayer.setStyle({ color: "#00FF00", weight: 7, opacity: 1 }); 
+                            subLayer.bringToFront();
+                        } else {
+                            subLayer.setStyle({ color: "#32CD32", weight: 5, opacity: 0.8 }); 
+                        }
+                    }
+                });
+            });
         });
-        suggestionsBox.appendChild(div);
-      });
-      suggestionsBox.style.display = suggestions.length > 0 ? "block" : "none";
-    });
-    */
-
-    locationInput.addEventListener("blur", () => {
-      setTimeout(() => (suggestionsBox.style.display = "none"), 200);
-    });
-
-    consultButton.addEventListener("click", consultarUbicacionEspecifica);
+    }
 
     generarElementosDecorativos();
     startDateTime.addEventListener("input", actualizarRestricciones);
     endDateTime.addEventListener("input", actualizarRestricciones);
-    inhabilitarBoton();
+    inhabilitarBotonConsultarEspecifica(); 
   } catch (error) {
-    console.error("Error al cargar la configuración:", error);
+    console.error("Error durante la inicialización:", error);
+    alert("Ocurrió un error al inicializar la página. Por favor, recargue.");
   }
 });
