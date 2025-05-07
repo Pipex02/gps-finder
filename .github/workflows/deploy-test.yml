@@ -22,8 +22,10 @@ jobs:
           - branch: dev-fe
             runner: ec2-fe-test
     name: Deploy to Test Environment (${{ matrix.branch }})
-    runs-on: [self-hosted, ${{ matrix.runner }}]
-    if: github.ref == format('refs/heads/{0}', matrix.branch)
+    runs-on:
+      - self-hosted
+      - ${{ matrix.runner }}
+    if: github.head_ref == 'dev-an' || github.head_ref == 'dev-ally' || github.head_ref == 'dev-ha' || github.head_ref == 'dev-fe'
     steps:
       - name: Checkout del código
         uses: actions/checkout@v4
