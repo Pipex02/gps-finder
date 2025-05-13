@@ -22,7 +22,7 @@ header {
 .title-image {
     margin: 10px;
     height: 90%;
-} 
+}
 
 h1 {
     font-size: 3em;
@@ -49,11 +49,6 @@ h1 {
     left: 4vw;
 }
 
-  
-
-
-
-
 .content {
     width: 100vw;
     height: 80vh;
@@ -62,79 +57,249 @@ h1 {
 }
 
 #map-container {
-    width: 67%;
+    width: 90%;
     height: 100%;
     margin-left: 1vw;
+    display: flex;
+    flex-direction: column; /* Ensure map and slider are stacked */
+    align-items: center;
+    position: relative; /* For absolute positioning of slider if needed, though flex is used here */
 }
 
 #map {
-    width: 105%;
-    height: 100%;
+    width: 100%;
+    /* height: 105%; */ /* Adjust height to make space for slider */
+    height: calc(100% - 50px); /* Example: reduce map height by slider height */
     border-radius: 2vw;
-    box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.2); /* Sombra ligera */
+    box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.2);
 }
 
-.info {
+#route-slider-container {
+    display: flex; /* Changed from none by JS */
+    align-items: center;
+    justify-content: center;
+    width: 80%; /* Or 100% of map-container if preferred */
+    padding: 10px;
+    background-color: rgba(0, 4, 40, 0.8); /* Dark background similar to theme */
+    border-radius: 0 0 10px 10px; /* Rounded bottom corners if map has rounded top */
+    box-sizing: border-box;
+    margin: 0 auto; /* Center it if width is less than map-container */
+    position: absolute; /* Position it at the bottom of the map-container */
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 1000; /* Ensure it's above the map tiles but below popups if necessary */
+}
+
+#route-slider {
+    flex-grow: 1;
+    height: 15px;
+    -webkit-appearance: none;
+    appearance: none;
+    background: #004e92; /* Slider track color */
+    outline: none;
+    opacity: 0.9;
+    transition: opacity .2s;
+    border-radius: 5px;
+}
+
+#route-slider:hover {
+    opacity: 1;
+}
+
+#route-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 25px;
+    height: 25px;
+    background: #00aaff; /* Slider thumb color */
+    cursor: pointer;
+    border-radius: 50%;
+    border: 2px solid #000428;
+}
+
+#route-slider::-moz-range-thumb {
+    width: 25px;
+    height: 25px;
+    background: #00aaff;
+    cursor: pointer;
+    border-radius: 50%;
+    border: 2px solid #000428;
+}
+
+#slider-timestamp {
+    margin-left: 15px;
+    color: #00aaff;
+    font-size: 0.8rem;
+    min-width: 80px; /* Ensure space for timestamp */
+    text-align: center;
+}
+
+.cards-container {
     display: flex;
-    flex-direction: column; /* Organiza los elementos en una columna */
-    align-items: center; /* Centra los elementos */
+    flex-direction: row;
+    justify-content: center;
+    align-items: center;
+    font-size: 0.8em;
+    line-height: 1.5;
+    margin-top: -2vh;
+}
+
+.card-content p {
+    margin: 0vh 0;
+}
+
+#variable_cambiante {
+    color: #ffffff;
+}
+
+.variable-card {
+    background: #000428;
+    border: 0.3vw solid #004e92;
+    height: 19vh;
+    box-shadow: 0.5vw 0.5vw 0 #013665;
+    padding: 1vh 1vw;
+    text-align: center;
+    color: #ffffff;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    min-width: 18%;
+    flex-grow: 1;
+    margin: 2.5vh 0.5vw;
+    box-sizing: border-box;
+}
+
+
+
+.variable-card .card-content {
+    font-size: 0.9em;
+}
+
+.variable-card .info-icon {
+    position: relative;
+    font-size: 2.5em;   
+    margin-left: 0.5vw;
+    color: #ffffff;
+    top: -15px;        
+}
+
+.info { /* Corrected selector from 'info' to '.info' */
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 30%; /* Ensure info column has a defined width if map-container is 90% */
 }
 
 .card {
     font-family: 'Press Start 2P', cursive;
-    font-size: 0.5rem; /* Ajusta el valor según necesites */
-    width: 20vw;
+    font-size: 0.5rem;
+    /* width: 0.9vw; */ /* This seems too small, likely overridden by variable-card or datetime-card */
+    height: 17vh;
     max-width: 25vw;
-    background: #002b5e;
+    background: #03061f;
     border: 0.3vw solid #000428;
-    box-shadow: 0.5vw 0.5vw 0 #004e92;
+    box-shadow: 0.5vw 0.5vw 0 #1a2481;
     padding: 2vh;
     text-align: center;
     color: #00aaff;
     display: flex;
     flex-direction: column;
-    align-items: right;
-    justify-content: right;
+    /* align-items: right; */ /* 'right' is not a valid value for align-items */
+    /* justify-content: right; */ /* 'right' is not a valid value for justify-content */
+    align-items: center; /* More common default */
+    justify-content: center; /* More common default */
 }
-
-
 
 .datetime-card {
     position: relative;
     width: 20vw;
     max-width: 25vw;
-    height: 100%;
+    height: auto; 
+    min-height: 50vh; 
     background: #000428;
     border: 0.3vw solid #000428;
     box-shadow: 0.4vw 0.4vw 0 #004e92;
-    padding: 3vh;
+    padding: 1.5vh 2vh; /* Reduced padding */
     text-align: center;
     color: #00aaff;
     display: flex;
     flex-direction: column;
     align-items: center;
-    margin-left: 5vw;  
-    
+    margin-left: 2vw;  
+    margin-right: 2vw;
+}
+
+.datetime-card h2 {
+    font-size: 0.8rem; /* Reduced font size */
+    margin-top: 0.8vh; /* Adjusted margin */
+    margin-bottom: 0.3vh; /* Reduced margin */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.datetime-card h2 span:first-child {
+    margin-right: 5px; /* Space between text and icon */
+}
+
+
+.vertical-header { /* This class was defined but not used in HTML snippet, keeping for completeness */
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 0.5em; 
+  }
+
+input[type="datetime-local"] {
+    font-family: 'Press Start 2P', cursive;
+    font-size: 0.65rem; /* Significantly reduced font size */
+    padding: 0.5rem; /* Significantly reduced padding */
+    background-color: #ffffff;
+    color: #000000;
+    border: 2px solid #00aaff;
+    border-radius: 0.5rem;
+    box-shadow: 0.3rem 0.3rem 0 #004e92;
+    width: 85%; /* Adjusted width */
+    max-width: 200px; /* Reduced max-width */
+    text-align: center;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    margin-bottom: 0.5vh; /* To compensate for one <br> if double <br><br> is used */
+}
+  
+input[type="datetime-local"]:focus {
+    outline: none;
+    transform: scale(1.02);
+    box-shadow: 0 0 10px #00aaff, 0.3rem 0.3rem 0 #004e92;
 }
 
 .button-container {
     display: flex;
     flex-direction: column;
     height: auto;
-    padding: 2vh;
-
+    padding: 0.5vh 0; /* Reduced padding */
+    align-items: center;
+    justify-content: center;
+    width: 100%;
 }
 
-.button {
+.button { /* This is the main "Consultar" button and also #consult-button if not overridden */
     font-family: 'Press Start 2P', cursive;
-    padding: 0.8vh 2vw;
-    border: 0.4vw solid #00aaff;
-    box-shadow: 0.5vw 0.5vw 0 #004e92;
+    width: 10.4vw; /* Reduced by 20% */
+    padding: 0.64vh 0.96vw; /* Reduced by 20% */
+    border: 0.32vw solid #00aaff; /* Reduced by 20% */
+    box-shadow: 0.4vw 0.4vw 0 #004e92; /* Reduced by 20% */
     background: #002b5e;
     color: #00aaff;
     cursor: pointer;
-    font-size: 1rem;
+    font-size: 0.6rem; /* Reduced by 20% */
     transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1.2; /* Kept unchanged */
+    margin-bottom: 1.5vh; /* Kept unchanged */
 }
 
 .button:hover {
@@ -143,8 +308,7 @@ h1 {
     transform: translate(0.2vw, 0.2vw);
 }
 
-
-.search-container {
+.search-container { /* Style for a generic search container, may not be used here */
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -168,81 +332,142 @@ h1 {
     text-align: center;
 }
 
-.suggestions {
-    position: absolute;
-    top: 100%;
-    left: 0;
-    width: 100%;
-    background: white;
-    border: 1px solid #ccc;
-    border-top: none;
-    max-height: 200px;
+.location-filter {
+    margin-top: 0; 
+    display: flex;
+    flex-direction: column;
+    gap: 0.8vh; /* Reduced gap */
+    width: 90%; 
+    align-items: center; 
+}
+
+.location-filter p {
+    color: #00aaff;
+    font-size: 0.65rem; /* Reduced font size */
+    text-align: center;
+    line-height: 1.2; /* Reduced line height */
+    margin-bottom: 0; /* Let <br> tags handle spacing or adjust if <br> are removed */
+}
+
+.location-filter select,
+.location-filter input[type="number"] {
+    width: 80%; 
+    padding: 0.6vh; /* Reduced padding */
+    font-family: 'Press Start 2P', cursive; 
+    font-size: 0.65rem; /* Reduced font size */
+    border: 0.3vw solid #00aaff; 
+    border-radius: 0.5vw; 
+    background: #002b5e; 
+    color: #00aaff; 
+    text-align: center; 
+    box-sizing: border-box;
+}
+
+
+#suggestions-box { /* Style for Geoapify, not used now but kept for completeness */
+    background: #002b5e;
+    border: 0.2vw solid #000428;
+    color: #00aaff;
+    max-height: 20vh;
     overflow-y: auto;
+    position: absolute;
+    width: 18vw;
     z-index: 1000;
-    display: none;
+    margin-top: 3.5vh;
 }
 
 .suggestion-item {
-    padding: 10px;
+    padding: 0.5vh 1vw;
     cursor: pointer;
+    font-size: 0.7rem;
 }
 
 .suggestion-item:hover {
-    background: #f0f0f0;
+    background: #004e92;
+}
+#consult-button { /* Specific location button, inherits from .button but can be overridden */
+    font-size: 0.56rem; /* Reduced by 20% */
+    padding: 0.56vh 0.8vw; /* Reduced by 20% */
+    width: 64%; /* Reduced by 20% */
+    margin-top: 0; /* Rely on parent gap */
+    background: #010811; /* Different background */
 }
 
-#consult-button {
-    font-family: 'Press Start 2P', cursive;
-    padding: 1vh 2vw;
-    margin-top: 8vh;
-    border: 0.4vw solid #00aaff;
-    box-shadow: 0.5vw 0.5vw 0 #004e92;
-    background: #010811;
-    color: #00aaff;
-    font-size: 0.8rem;
-    text-align: center;
-    text-decoration: none;
-    display: inline-block;
-    transition: all 0.2s ease;
+.location-filter h2 {
+    font-size: 0.7rem; /* Reduced font size */
+    margin-bottom: 0.2vh; 
+    margin-top: 0.5vh; 
+    color: #00aaff; 
 }
 
-#consult-button:enabled {
+/* Ícono de información */
+.info-icon { /* This is for popups, already styled in .variable-card .info-icon */
+    color: #fbfbfb; /* General style if used elsewhere */
     cursor: pointer;
-    background: #010811;
+    margin-left: 0.5vw;
+    /* margin-top: 0.2em; */ /* Already handled by flex alignment in h2 */
+    font-size: 1em; /* Adjusted to be relative to h2 font-size */
 }
 
-#consult-button:disabled:hover {
-    background: #010811;
-    box-shadow: 0.5vw 0.5vw 0 #004e92;
-    transform: none;
-    cursor: not-allowed;
+/* Estilo del popup */
+.popup {
+    display: none; /* Hidden by default */
+    position: fixed;
+    z-index: 999;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0,0,0,0.4);
+    justify-content: center; /* Added for centering */
+    align-items: center; /* Added for centering */
+}
+
+.popup-content {
+    background-color: white;
+    margin: 10% auto; /* Default margin */
+    padding: 20px;
+    border-radius: 12px;
+    width: 90%;
+    max-width: 400px;
+    position: relative;
+    box-shadow: 0 0 10px rgba(0,0,0,0.25);
+    font-family: sans-serif; /* Different font for popup content */
+    color: #333; /* Text color for popup */
 }
 
 
-
-
-.head {
-    font-size: 1rem;
-    font-weight: bold;
-    background: #00aaff;
-    padding: 0.625rem; 
-    text-align: center;
-    color: #000428;
-    border-bottom: 0.25rem solid #000428; 
-    margin-left: -0.9vw;
-    display: flex;
-    justify-content: center; /* Centra el contenido horizontalmente */
-    align-items: center; /* Centra el contenido verticalmente */
+.popup h2 { /* Targeting h2 specifically within popup-content */
+    margin-top: 0;
+    font-family: 'Press Start 2P', cursive; /* Keep theme for popup title */
+    color: #000428; /* Darker color for popup title */
+    font-size: 1.2rem; /* Popup title font size */
 }
 
+.popup p { /* Targeting p specifically within popup-content */
+    font-family: Arial, sans-serif; /* More readable font for popup text */
+    font-size: 0.9rem;
+    line-height: 1.6;
+}
 
+.popup-close {
+    position: absolute;
+    top: 8px;
+    right: 12px;
+    font-size: 20px;
+    cursor: pointer;
+    color: #888; /* Color for close button */
+}
 
-.card-content p {
+.popup-close:hover {
+    color: #000;
+}
+
+.card-content p { /* This was defined twice, ensuring it's for variable cards */
     margin: 0;
-    padding: 0.5vh 1vw; /* Espaciado para los párrafos */
-    margin-bottom: 2vh;
+    padding: 0.5vh 1vw;
+    /* margin-bottom: 2vh; */ /* This might be too much for compact cards */
 }
-
 
 .star {
     position: absolute;
@@ -281,6 +506,7 @@ h1 {
     }
 }
 
+<<<<<<< HEAD
 
 .route-control-container {
     margin-top: 20px;
@@ -292,4 +518,181 @@ h1 {
 #route-controls {
 max-height: 200px;
 overflow-y: auto;
+=======
+@media (max-width: 768px) {
+    body {
+        overflow-y: auto;
+        height: auto;
+    }
+  
+    header {
+        flex-direction: column;
+        height: auto;
+        margin-bottom: 2vh;
+    }
+  
+    h1 {
+        font-size: 1.5em;
+    }
+  
+    .content {
+        flex-direction: column;
+        height: auto; /* Changed from 100% */
+        justify-content: center;
+        align-items: center;
+    }
+  
+    #map-container {
+        width: 90vw;
+        height: 50vh; /* Adjusted height for mobile */
+        margin: 0 auto;
+        margin-bottom: 2vh; /* Space below map */
+    }
+  
+    #map {
+        width: 100%;
+        height: 100%;
+        /* margin-bottom: 2vh; */ /* Moved to map-container */
+    }
+  
+    .info {
+        width: 90vw; /* Adjusted width for mobile */
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+    }
+  
+    .card, .datetime-card { /* General card styling for mobile */
+        width: 85vw; /* Adjusted width */
+        max-width: none; /* Remove max-width for mobile */
+        margin: 1vh auto;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .variable-card { /* Specifics for variable cards on mobile */
+        height: auto; /* Allow height to adjust */
+        min-height: 15vh;
+        flex-direction: row; /* Keep as row if desired or change to column */
+    }
+
+    .datetime-card {
+        height: auto;
+        min-height: auto; /* Remove min-height for mobile if content dictates size */
+        margin: 2vh auto; /* Adjusted margin */
+        padding: 2vh;
+    }
+  
+    .button-container {
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        gap: 1.5vh; /* Adjusted gap */
+        padding: 1vh;
+        width: 100%; /* Take full width of parent */
+    }
+  
+    .button, #consult-button { /* General button styling for mobile */
+        font-size: 0.9rem; /* Adjusted font size */
+        padding: 1.5vh 3vw; /* Adjusted padding */
+        width: 70%; /* Set a width for buttons */
+        max-width: 300px; /* Max width for buttons */
+        line-height: 1.2;
+    }
+  
+    #back-button {
+        position: static;
+        margin-bottom: 2vh;
+        margin-top: 2vh;
+        font-size: 1rem; /* Adjusted font size */
+        padding: 1.5vh 3vw; /* Adjusted padding */
+        width: 60%;
+        max-width: 250px;
+    }
+
+    .datetime-card h2 {
+        font-size: 0.9rem;
+    }
+    input[type="datetime-local"]{
+        font-size: 0.8rem;
+        padding: 0.7rem;
+    }
+
+    .location-filter {
+        width: 100%;
+    }
+
+    .location-filter p {
+        font-size: 0.8rem;
+    }
+
+    .location-filter h2 {
+        font-size: 0.9rem;
+    }
+
+    .location-filter select,
+    .location-filter input[type="number"] {
+        font-size: 0.8rem; /* Adjusted font size */
+        padding: 1vh; /* Adjusted padding */
+        width: 80%;
+    }
+
+    #suggestions-box { /* Not used, but for consistency */
+        width: 85vw;
+        margin-top: 1vh;
+    }
+
+    .suggestion-item {
+        font-size: 0.9rem;
+    }
+}
+
+@media (max-width: 480px) {
+    h1 {
+        font-size: 1.2em;
+    }
+
+    #map-container {
+        height: 40vh; /* Further adjust map height */
+    }
+
+    .card, .datetime-card {
+        width: 90vw; /* Ensure full use of width */
+    }
+    
+    .button, #consult-button, #back-button {
+        font-size: 0.8rem;
+        padding: 1.2vh 2.5vw;
+        width: 80%;
+    }
+    
+    input[type="datetime-local"]{
+        font-size: 0.7rem;
+        padding: 0.6rem;
+    }
+
+    .location-filter p {
+        font-size: 0.7rem;
+    }
+    .location-filter h2 {
+        font-size: 0.8rem;
+    }
+
+    .location-filter select,
+    .location-filter input[type="number"] {
+        font-size: 0.7rem;
+        padding: 0.8vh;
+        width: 85%;
+    }
+}
+
+/* Adjust leaflet control positions if slider overlaps */
+.leaflet-bottom.leaflet-left {
+    margin-bottom: 50px; /* Adjust if slider container height changes */
+}
+.leaflet-bottom.leaflet-right {
+    margin-bottom: 50px; /* Adjust if slider container height changes */
+>>>>>>> origin/main
 }

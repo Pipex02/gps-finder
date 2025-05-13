@@ -9,46 +9,135 @@
 >>>>>>> main
     <link rel="stylesheet" href="styles1.css">
     <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
 </head>
 <body>
     <header class="title-container">
-        <img src="gato.webp" alt="Gato" class="title-image">
+        <img src="LogoGeoFinder500.webp" alt="Logo" class="title-image">
         <h1 class="title">Geo Finder</h1>
     </header>
+    <div class="popup" id="welcome-popup">
+        <div class="popup-content">
+            <span class="popup-close" id="welcome-close">&times;</span>
+            <h2>¡Bienvenido a Geo Finder!</h2>
+            <p>Esta página te permite visualizar tu ubicación actual en un mapa, ver una variable cambiante en tiempo real, y consultar históricos de rutas pasadas. 🚀</p>
+        </div>
+    </div>
+
     <div class="content">
         <div id="map-container">
             <div id="map"></div>
+            <div class="location-info-container">
+                <div class="card location-card-individual">
+                    <div class="head">
+                        Latitud
+                    </div>
+                    <div class="card-content">
+                        <p><span id="latitud">Obteniendo...</span></p>
+                    </div>
+                </div>
+
+                <div class="card location-card-individual">
+                    <div class="head">
+                        Longitud
+                    </div>
+                    <div class="card-content">
+                        <p><span id="longitud">Obteniendo...</span></p>
+                    </div>
+                </div>
+
+                <div class="card location-card-individual">
+                    <div class="head">
+                        Tiempo
+                    </div>
+                    <div class="card-content">
+                        <p><span id="timestamp">Obteniendo...</span></p>
+                    </div>
+                </div>
+            </div>
         </div>
         <div class="info">
-            
-            <div class="card location-card">
-                <img src="AstronautaPixelArt-2.webp" alt="Astronauta" class="astronaut">
-                <div class="head">Datos de Ubicación</div>
+
+            <div class="card variable-card">
+                <div class="head">
+                    Gasolina
+                    <span class="info-icon fa-solid fa-circle-info" data-popup="variable-popup"></span>
+                </div>
                 <div class="card-content">
-                    <p><strong>Latitud:</strong> <span id="latitud">Obteniendo...</span></p>
-                    <p><strong>Longitud:</strong> <span id="longitud">Obteniendo...</span></p>
-                    <p><strong>Estampa de Tiempo:</strong> <span id="timestamp">Obteniendo...</span></p>
+                    <p><span id="gasolina">Obteniendo</span></p>
                 </div>
             </div>
 
-           
+        
+
+            <div class="card variable-card">
+                <div class="head">
+                    Velocidad
+                    <span class="info-icon fa-solid fa-circle-info" data-popup="velocity-popup"></span>
+                </div>
+                <div class="card-content">
+                    <p><span id="Velocidad">Obteniendo</span></p>
+                </div>
+            </div>
 
             <div class="card history-card">
                 <img src="alien.webp" alt="Alien" class="alien">
-                <div class="head">Históricos</div>
+                <div class="head">
+                    Históricos
+                    <span class="info-icon fa-solid fa-circle-info" data-popup="history-popup"></span>
+                </div>
                 <div class="card-content">
                     <p>Acá podrás consultar rutas en los días deseados</p>
                     <a href="historicos.html" class="button">Consultar</a>
                 </div>
             </div>
+
+            <div class="popup" id="location-popup">
+                <div class="popup-content">
+                    <span class="popup-close">×</span>
+                    <h2>Datos de Ubicación</h2>
+                    <p>Esta sección muestra la latitud, longitud y estampa de tiempo de tu ubicación actual, obtenida mediante geolocalización.</p>
+                </div>
+            </div>
+
+            <div class="popup" id="variable-popup">
+                <div class="popup-content">
+                    <span class="popup-close">×</span>
+                    <h2>Gasolina</h2>
+                    <p>
+                        ⛽🚗 Aquí podrás consultar el nivel de gasolina de tu vehículo en tiempo real📊. 🙂
+                    </p>
+                </div>
+            </div>
+
+            <div class="popup" id="velocity-popup">
+                <div class="popup-content">
+                    <span class="popup-close">×</span>
+                    <h2>Velocidad</h2>
+                    <p>
+                        🚗💨⏱️ Aquí podrás consultar la velocidad de tu vehículo en tiempo real 📊. 🙂
+                    </p>
+                </div>
+            </div>
+            <div class="popup" id="history-popup">
+                <div class="popup-content">
+                    <span class="popup-close">×</span>
+                    <h2>Históricos</h2>
+                    <p>Esta sección te permite consultar rutas pasadas ingresando fechas específicas. Haz clic en "Consultar" para ver los detalles.</p>
+                </div>
+            </div>
+
         </div>
     </div>
 
-    <!-- Scripts de Leaflet y API -->
     <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+    <script src="progress-bar.js"></script>
+    <script src="speedometer.js"></script>
     <script>
         async function getConfig() {
-            const response = await fetch('/api/config');
+            const response = await fetch('/api/config'); 
             if (!response.ok) throw new Error("Error al obtener la configuración");
             const config = await response.json();
             return config;
@@ -57,7 +146,7 @@
         document.addEventListener("DOMContentLoaded", async () => {
             try {
                 const config = await getConfig();
-                
+
                 // Actualizar el título de la página con el valor de APP_TITLE
                 if (config.pageTitle) {
                     document.getElementById('page-title').textContent = config.pageTitle || "Geo Finder";
@@ -81,7 +170,7 @@
 
         async function obtenerCoordenadasDesdeAPI() {
             try {
-                const respuesta = await fetch('/api/coordenadas');
+                const respuesta = await fetch('/api/coordenadas'); 
                 if (!respuesta.ok) {
                     throw new Error('Error al obtener datos de la API');
                 }
@@ -90,13 +179,13 @@
                 if (datos.latitud && datos.longitud && datos.timestamp) {
                     document.getElementById("latitud").innerText = datos.latitud;
                     document.getElementById("longitud").innerText = datos.longitud;
-                    
+
                     function formatearTimestamp(timestamp) {
                         return timestamp.replace("T", " ").split(".")[0];
                     }
 
                     document.getElementById("timestamp").innerText = formatearTimestamp(datos.timestamp);
-                    
+
                     var lat = parseFloat(datos.latitud);
                     var lon = parseFloat(datos.longitud);
 
@@ -126,7 +215,7 @@
         // Obtener ubicación al cargar y actualizar cada 5 segundos
         obtenerCoordenadasDesdeAPI();
         setInterval(obtenerCoordenadasDesdeAPI, 5000);
-    </script>  
+    </script>
     <script>
         // Generar muchas estrellas
         for (let i = 0; i < 100; i++) {
@@ -147,5 +236,51 @@
             document.body.appendChild(meteor);
         }
     </script>
+    <script>
+        document.querySelectorAll('.info-icon').forEach(icon => {
+            icon.addEventListener('click', () => {
+                const popupId = icon.getAttribute('data-popup');
+                document.getElementById(popupId).style.display = 'block';
+            });
+        });
+
+        document.querySelectorAll('.popup-close').forEach(close => {
+            close.addEventListener('click', () => {
+                close.closest('.popup').style.display = 'none';
+            });
+        });
+
+        // Cerrar popup si se hace clic fuera del contenido
+        window.addEventListener('click', (e) => {
+            document.querySelectorAll('.popup').forEach(popup => {
+                if (e.target === popup) {
+                    popup.style.display = 'none';
+                }
+            });
+        });
+    </script>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const welcomePopup = document.getElementById("welcome-popup");
+        const closeBtn = document.getElementById("welcome-close");
+
+        // Verificar si el popup ya ha sido mostrado
+        if (!localStorage.getItem('welcomeShown')) {
+            // Mostrar el popup de bienvenida si es la primera vez
+            welcomePopup.style.display = "flex";
+
+            // Marcar como mostrado en localStorage
+            localStorage.setItem('welcomeShown', 'true');
+        }
+
+        // Cerrar el popup al hacer clic en la X
+        closeBtn.addEventListener("click", () => {
+            welcomePopup.style.display = "none";
+        });
+    });
+</script>
+
+
 </body>
 </html>
