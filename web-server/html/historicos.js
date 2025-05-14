@@ -374,7 +374,7 @@ function mostrarSegmentosRuta(data, defaultColor = "#32CD32") {
         segmentLayers.forEach((_, i) => { 
         const opt = document.createElement("option");
         opt.value = i;
-        opt.textContent = `Segmento ${i + 1}`;
+        opt.textContent = `Ruta ${i + 1}`;
         segmentSelect.appendChild(opt);
         });
     } else {
@@ -469,12 +469,12 @@ function updateSliderMarker(index) {
   } else {
       sliderMarker = L.circleMarker(latLng, {
           radius: 8,
-          fillColor: "#FF0000", 
+          fillColor: "#FF0000",
           color: "#FFFFFF",
           weight: 2,
           opacity: 1,
           fillOpacity: 0.9,
-          pane: 'markerPane' 
+          pane: 'markerPane'
       }).addTo(map);
   }
   sliderMarker.bringToFront();
@@ -484,10 +484,13 @@ function updateSliderMarker(index) {
           const originalDate = new Date(pointData.timestamp);
           // Add 5 hours for Colombia time adjustment
           const adjustedDate = new Date(originalDate.getTime() + (5 * 60 * 60 * 1000));
-          sliderTimestampSpan.textContent = adjustedDate.toLocaleTimeString("es-CO", { 
-              // Using toLocaleTimeString for just the time part, assuming date is not needed here
-              // or use toLocaleString if date part is also desired with the adjustment.
-              hour: "2-digit", minute: "2-digit", second: "2-digit",
+          sliderTimestampSpan.textContent = adjustedDate.toLocaleString("es-CO", {
+              day: "2-digit",
+              month: "2-digit",
+              year: "2-digit",
+              hour: "2-digit",
+              minute: "2-digit",
+              second: "2-digit",
               // timeZone: "America/Bogota" // More robust if server time is UTC
           });
       } else {
@@ -521,8 +524,6 @@ document.addEventListener("DOMContentLoaded", async () => {
                 iconAnchor: [16, 32] 
             })
         }).addTo(map)
-            .bindPopup(`Ubicación seleccionada:<br>Lat: ${clickedLat.toFixed(5)}<br>Lng: ${clickedLng.toFixed(5)}`)
-            .openPopup();
 
         habilitarBotonConsultarEspecifica(); 
         
