@@ -234,7 +234,7 @@ const selectedVehicle = vehicleSelect ? vehicleSelect.value : '1';
         setInterval(obtenerCoordenadasDesdeAPI, 5000);
         document.getElementById('vehicleSelect').addEventListener('change', function() {
             // Si deseas reiniciar la trayectoria, descomenta la siguiente línea:
-            // route = [];
+            route = [];
             obtenerCoordenadasDesdeAPI();
         });
     </script>
