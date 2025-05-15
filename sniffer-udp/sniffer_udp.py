@@ -18,16 +18,17 @@ def conectar_bd():
         print(f"❌ Error al conectar con la base de datos: {e}")
         return None
 
-# Inserta las coordenadas en la base de datos (sin IP)
-def insertar_coordenadas(lat, lon, estampa, velocidad, gasolina):
+def insertar_coordenadas(lat, lon, estampa, velocidad, gasolina, VehicleID):
     conexion = conectar_bd()
     if conexion:
         try:
             with conexion.cursor() as cursor:
-                sql = "INSERT INTO coordenadas (latitud, longitud, timestamp, velocidad, gasolina) VALUES (%s, %s, %s, %s, %s)"
-                cursor.execute(sql, (lat, lon, estampa, velocidad, gasolina))
+                # Se inserta respetando el orden de la tabla:
+                # latitud, longitud, timestamp, velocidad, gasolina, VehicleID
+                sql = "INSERT INTO coordenadas (latitud, longitud, timestamp, velocidad, gasolina, VehicleID) VALUES (%s, %s, %s, %s, %s, %s)"
+                cursor.execute(sql, (lat, lon, estampa, velocidad, gasolina, VehicleID))
                 conexion.commit()
-                print(f"✅ Datos insertados: {lat}, {lon}, {estampa}, {velocidad},{gasolina}")
+                print(f"✅ Datos insertados: {lat}, {lon}, {estampa}, {velocidad}, {gasolina}, {VehicleID}")
         except pymysql.MySQLError as e:
             print(f"❌ Error al insertar en la base de datos: {e}")
         finally:
@@ -49,24 +50,26 @@ def sniffer():
     try:
         while True:
             try:
-                datos, direccion = servidor.recvfrom(1024)  
-                print(f"🔗 Paquete recibido de {direccion[0]}: {datos.decode('utf-8')}")
+                datos, direccion = servidor.recvfrom(1024)
+                mensaje = datos.decode('utf-8').strip()
+                print(f"🔗 Paquete recibido de {direccion[0]}: {mensaje}")
 
                 try:
-                    # Extraer lat, lon, estampa,velocidad, gasolina del paquete
-                    lat, lon, estampa, velocidad, gasolina = datos.decode('utf-8').strip().split(',')
+                    # Extraer latitud, longitud, estampa, velocidad, gasolina, VehicleID del paquete
+                    lat, lon, estampa, velocidad, gasolina, VehicleID = mensaje.split(',')
                     lat = float(lat)
                     lon = float(lon)
-                    velocidad = float(velocidad) 
-                    gasolina = float(gasolina) # Convertir a float
-
+                    velocidad = float(velocidad)
+                    gasolina = float(gasolina)
+                    VehicleID = int(VehicleID)
+                    
                     # Inserta los datos en la base de datos
-                    insertar_coordenadas(lat, lon, estampa, velocidad, gasolina)
+                    insertar_coordenadas(lat, lon, estampa, velocidad, gasolina, VehicleID)
                 except Exception as e:
                     print(f"❌ Error procesando datos: {e}")
 
             except socket.timeout:
-                continue  # 🔹 Evita que el programa se bloquee indefinidamente
+                continue  # 🔹 Evita bloqueo indefinido
 
     except KeyboardInterrupt:
         print("\n⏹️ Sniffer detenido por el usuario.")

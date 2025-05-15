@@ -88,7 +88,6 @@ document.addEventListener('DOMContentLoaded', function() {
             percent = 0;
         }
         const clampedPercent = Math.max(0, Math.min(100, percent));
-        const circumference = 2 * Math.PI * 54;
         const offset = circumference - (clampedPercent / 100) * circumference;
         progressCircle.setAttribute("stroke-dashoffset", offset);
         percentText.innerText = `${Math.round(clampedPercent)}%`;
@@ -104,11 +103,15 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // --- Lógica de FETCH con valor en porcentaje directo ---
-    const apiEndpoint = '/api/coordenadas';
-
+    // Se tiene en cuenta el ID del vehículo seleccionado.
+    const apiBase = 'https://geofind-al.ddns.net/api/coordenadas';
     async function fetchGasolinaLevel() {
         try {
-            const response = await fetch(apiEndpoint);
+            const vehicleSelect = document.getElementById('vehicleSelect');
+            const vehicleID = vehicleSelect ? vehicleSelect.value : '';
+            // Construye la URL según si hay un VehicleID o no.
+            const url = vehicleID ? `${apiBase}?VehicleID=${vehicleID}` : apiBase;
+            const response = await fetch(url);
             if (!response.ok) {
                 return null;
             }
@@ -144,24 +147,28 @@ document.addEventListener('DOMContentLoaded', function() {
         requestAnimationFrame(animateProgress);
     }
 
-    // 1. Obtener el valor inicial de gasolina del API al cargar la página
-    fetchGasolinaLevel().then(level => {
-        if (level !== null) {
-            targetPercent = level;
-            animateProgress();
-        } else {
-            updateProgress(0);
-            currentPercent = 0;
-            targetPercent = 0;
-        }
-    });
-
-    // 2. Configurar un intervalo para obtener el nuevo valor del API periódicamente
-    const fetchInterval = setInterval(async () => {
+    // Función para obtener y actualizar el valor de gasolina, sincronizada con el vehículo seleccionado
+    async function updateGasolina() {
         const level = await fetchGasolinaLevel();
         if (level !== null) {
             targetPercent = level;
             animateProgress();
         }
-    }, 5000);
+    }
+
+    // 1. Obtener el valor inicial de gasolina al cargar la página
+    updateGasolina();
+
+    // 2. Configurar un intervalo para actualizar el valor cada 5 segundos
+    setInterval(updateGasolina, 5000);
+
+    // 3. Actualizar el progreso cuando se cambie el vehículo seleccionado
+    const vehicleSelect = document.getElementById('vehicleSelect');
+    if (vehicleSelect) {
+        vehicleSelect.addEventListener('change', () => {
+            // Reiniciamos la animación al cambiar de vehículo
+            currentPercent = 0;
+            updateGasolina();
+        });
+    }
 });

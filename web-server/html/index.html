@@ -8,7 +8,6 @@
     <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
     <link rel="icon" type="image/x-icon" href="/favicon.ico">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-
 </head>
 <body>
     <header class="title-container">
@@ -22,33 +21,24 @@
             <p>Esta página te permite visualizar tu ubicación actual en un mapa, ver una variable cambiante en tiempo real, y consultar históricos de rutas pasadas. 🚀</p>
         </div>
     </div>
-
     <div class="content">
         <div id="map-container">
             <div id="map"></div>
             <div class="location-info-container">
                 <div class="card location-card-individual">
-                    <div class="head">
-                        Latitud
-                    </div>
+                    <div class="head">Latitud</div>
                     <div class="card-content">
                         <p><span id="latitud">Obteniendo...</span></p>
                     </div>
                 </div>
-
                 <div class="card location-card-individual">
-                    <div class="head">
-                        Longitud
-                    </div>
+                    <div class="head">Longitud</div>
                     <div class="card-content">
                         <p><span id="longitud">Obteniendo...</span></p>
                     </div>
                 </div>
-
                 <div class="card location-card-individual">
-                    <div class="head">
-                        Tiempo
-                    </div>
+                    <div class="head">Tiempo</div>
                     <div class="card-content">
                         <p><span id="timestamp">Obteniendo...</span></p>
                     </div>
@@ -56,29 +46,37 @@
             </div>
         </div>
         <div class="info">
-
+            <!-- Tarjeta para selección de vehículo -->
+            <div class="card vehicle-selection-card">
+                <div class="head">Seleccionar Vehículo</div>
+                <div class="card-content">
+                    <select id="vehicleSelect">
+                        <option value="1">Vehículo 1</option>
+                        <option value="2">Vehículo 2</option>
+                    </select>
+                </div>
+            </div>
+            <!-- Tarjeta de Gasolina -->
             <div class="card variable-card">
                 <div class="head">
                     Gasolina
                     <span class="info-icon fa-solid fa-circle-info" data-popup="variable-popup"></span>
                 </div>
                 <div class="card-content">
-                    <p><span id="gasolina">Obteniendo</span></p>
+                    <p><span id="gasolina">Obteniendo...</span></p>
                 </div>
             </div>
-
-        
-
+            <!-- Tarjeta de Velocidad -->
             <div class="card variable-card">
                 <div class="head">
                     Velocidad
                     <span class="info-icon fa-solid fa-circle-info" data-popup="velocity-popup"></span>
                 </div>
                 <div class="card-content">
-                    <p><span id="Velocidad">Obteniendo</span></p>
+                    <p><span id="velocidad">Obteniendo...</span></p>
                 </div>
             </div>
-
+            <!-- Tarjeta de Históricos -->
             <div class="card history-card">
                 <img src="alien.webp" alt="Alien" class="alien">
                 <div class="head">
@@ -90,7 +88,7 @@
                     <a href="historicos.html" class="button">Consultar</a>
                 </div>
             </div>
-
+            <!-- Popups informativos -->
             <div class="popup" id="location-popup">
                 <div class="popup-content">
                     <span class="popup-close">×</span>
@@ -98,37 +96,29 @@
                     <p>Esta sección muestra la latitud, longitud y estampa de tiempo de tu ubicación actual, obtenida mediante geolocalización.</p>
                 </div>
             </div>
-
             <div class="popup" id="variable-popup">
                 <div class="popup-content">
                     <span class="popup-close">×</span>
                     <h2>Gasolina</h2>
-                    <p>
-                        ⛽🚗 Aquí podrás consultar el nivel de gasolina de tu vehículo en tiempo real📊. 🙂
-                    </p>
+                    <p>⛽🚗 Consulta el nivel de gasolina del vehículo en tiempo real.</p>
                 </div>
             </div>
-
             <div class="popup" id="velocity-popup">
                 <div class="popup-content">
                     <span class="popup-close">×</span>
-                    <h2>Velocidad</h2>
-                    <p>
-                        🚗💨⏱️ Aquí podrás consultar la velocidad de tu vehículo en tiempo real 📊. 🙂
-                    </p>
+                    <h2>velocidad</h2>
+                    <p>🚗💨 Consulta la velocidad del vehículo en tiempo real.</p>
                 </div>
             </div>
             <div class="popup" id="history-popup">
                 <div class="popup-content">
                     <span class="popup-close">×</span>
                     <h2>Históricos</h2>
-                    <p>Esta sección te permite consultar rutas pasadas ingresando fechas específicas. Haz clic en "Consultar" para ver los detalles.</p>
+                    <p>Consulta rutas pasadas ingresando fechas específicas.</p>
                 </div>
             </div>
-
         </div>
     </div>
-
     <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
     <script src="progress-bar.js"></script>
     <script src="speedometer.js"></script>
@@ -139,12 +129,9 @@
             const config = await response.json();
             return config;
         }
-
         document.addEventListener("DOMContentLoaded", async () => {
             try {
                 const config = await getConfig();
-
-                // Actualizar el título de la página con el valor de APP_TITLE
                 if (config.pageTitle) {
                     document.getElementById('page-title').textContent = config.pageTitle || "Geo Finder";
                 }
@@ -160,42 +147,71 @@
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             attribution: '&copy; OpenStreetMap contributors'
         }).addTo(map);
-
+        
         var marker;  // Variable para el marcador
         var route = [];  // Almacena la ruta recorrida
         var polyline = L.polyline([], {color: '#004e92', weight: 6}).addTo(map); // Línea de la ruta
 
         async function obtenerCoordenadasDesdeAPI() {
+            const vehicleSelect = document.getElementById('vehicleSelect');
+            const vehicleID = vehicleSelect ? vehicleSelect.value : '';
+            const url = vehicleID ? `https://geofind-al.ddns.net/api/coordenadas?VehicleID=${vehicleID}` : `/api/coordenadas`;
+
             try {
-                const respuesta = await fetch('/api/coordenadas'); 
+                const respuesta = await fetch(url);
                 if (!respuesta.ok) {
                     throw new Error('Error al obtener datos de la API');
                 }
                 const datos = await respuesta.json();
 
+                if (!datos || Object.keys(datos).length === 0) {
+                    document.getElementById("latitud").innerText = "0";
+                    document.getElementById("longitud").innerText = "0";
+                    document.getElementById("timestamp").innerText = "0";
+                    //document.getElementById("gasolina").innerText = "0";
+                   // document.getElementById("velocidad").innerText = "0";
+                    return;
+                }
                 if (datos.latitud && datos.longitud && datos.timestamp) {
                     document.getElementById("latitud").innerText = datos.latitud;
                     document.getElementById("longitud").innerText = datos.longitud;
-
                     function formatearTimestamp(timestamp) {
                         return timestamp.replace("T", " ").split(".")[0];
                     }
-
                     document.getElementById("timestamp").innerText = formatearTimestamp(datos.timestamp);
-
+                    //document.getElementById("gasolina").innerText = datos.gasolina;
+                    //document.getElementById("velocidad").innerText = datos.velocidad;
+                    
                     var lat = parseFloat(datos.latitud);
                     var lon = parseFloat(datos.longitud);
-
-                    // Agregar nueva ubicación a la ruta
+                    
                     route.push([lat, lon]);
 
-                    // Si ya existe un marcador, actualiza la posición
+                     const vehicleSelect = document.getElementById('vehicleSelect');
+const selectedVehicle = vehicleSelect ? vehicleSelect.value : '1';
+
+                    let carIcon;
+                    if (selectedVehicle === '1') {
+                        carIcon = L.icon({
+                            iconUrl: 'taxi.png', // Icono para Vehículo 1
+                            iconSize: [60, 60],
+                            iconAnchor: [30, 30] // Ajusta según las dimensiones reales
+                        });
+                    } else if (selectedVehicle === '2') {
+                        carIcon = L.icon({
+                            iconUrl: 'taxi1.png', // Icono para Vehículo 2
+                            iconSize: [60, 60],
+                            iconAnchor: [30, 30]
+                        });
+                    }
+
                     if (marker) {
+                        marker.setIcon(carIcon);
                         marker.setLatLng([lat, lon]);
+                        marker.openPopup();
                     } else {
-                        // Si no existe, crea uno nuevo
                         marker = L.marker([lat, lon]).addTo(map)
-                            .bindPopup("Última ubicación registrada").openPopup();
+                            .bindPopup("Última ubicación registrada", { offset: [0, -20] }).openPopup();
                     }
 
                     // Redibujar la línea de la ruta
@@ -203,18 +219,26 @@
 
                     // Centrar el mapa en la nueva ubicación
                     map.setView([lat, lon]);
+                } else {
+                    document.getElementById("latitud").innerText = "0";
+                    document.getElementById("longitud").innerText = "0";
+                    document.getElementById("timestamp").innerText = "0";
+                    //document.getElementById("gasolina").innerText = "0";
+                    //document.getElementById("velocidad").innerText = "0";
                 }
             } catch (error) {
                 console.error('❌ Error al obtener datos:', error);
             }
         }
-
-        // Obtener ubicación al cargar y actualizar cada 5 segundos
         obtenerCoordenadasDesdeAPI();
         setInterval(obtenerCoordenadasDesdeAPI, 5000);
+        document.getElementById('vehicleSelect').addEventListener('change', function() {
+            // Si deseas reiniciar la trayectoria, descomenta la siguiente línea:
+            route = [];
+            obtenerCoordenadasDesdeAPI();
+        });
     </script>
     <script>
-        // Generar muchas estrellas
         for (let i = 0; i < 100; i++) {
             let star = document.createElement('div');
             star.className = 'star';
@@ -222,8 +246,6 @@
             star.style.left = Math.random() * 100 + '%';
             document.body.appendChild(star);
         }
-
-        // Generar más meteoros
         for (let i = 0; i < 30; i++) {
             let meteor = document.createElement('div');
             meteor.className = 'meteor';
@@ -240,14 +262,11 @@
                 document.getElementById(popupId).style.display = 'block';
             });
         });
-
         document.querySelectorAll('.popup-close').forEach(close => {
             close.addEventListener('click', () => {
                 close.closest('.popup').style.display = 'none';
             });
         });
-
-        // Cerrar popup si se hace clic fuera del contenido
         window.addEventListener('click', (e) => {
             document.querySelectorAll('.popup').forEach(popup => {
                 if (e.target === popup) {
@@ -256,28 +275,18 @@
             });
         });
     </script>
-
-<script>
-    document.addEventListener("DOMContentLoaded", function () {
-        const welcomePopup = document.getElementById("welcome-popup");
-        const closeBtn = document.getElementById("welcome-close");
-
-        // Verificar si el popup ya ha sido mostrado
-        if (!localStorage.getItem('welcomeShown')) {
-            // Mostrar el popup de bienvenida si es la primera vez
-            welcomePopup.style.display = "flex";
-
-            // Marcar como mostrado en localStorage
-            localStorage.setItem('welcomeShown', 'true');
-        }
-
-        // Cerrar el popup al hacer clic en la X
-        closeBtn.addEventListener("click", () => {
-            welcomePopup.style.display = "none";
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            const welcomePopup = document.getElementById("welcome-popup");
+            const closeBtn = document.getElementById("welcome-close");
+            if (!localStorage.getItem('welcomeShown')) {
+                welcomePopup.style.display = "flex";
+                localStorage.setItem('welcomeShown', 'true');
+            }
+            closeBtn.addEventListener("click", () => {
+                welcomePopup.style.display = "none";
+            });
         });
-    });
-</script>
-
-
+    </script>
 </body>
 </html>

@@ -11,6 +11,7 @@ body {
 }
 
 header {
+    position: relative;
     height: 15vh;
     display: flex;
     flex-direction: row;
@@ -141,7 +142,34 @@ h1 {
     margin: 2vh 0;
 }
 
+.vehicle-selection-card {
+    /* Puedes ajustar el tamaño, colores y márgenes según sea necesario */
+    width: 80%;
+    max-width: 18vw;
+    height: 9vh;
+    background: #000428;
+    border: 0.3vw solid #004e92;
+    box-shadow: 0.5vw 0.5vw 0 #013665;
+    padding: 1vh;
+    text-align: center;
+    color: #ffffff;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    margin: 0.5vh 0;
+    font-size: 0.8em;
+}
 
+/* Opcional: estilos para el select */
+.vehicle-selection-card select {
+    border: none;
+    padding: 0.5em;
+    font-family: inherit;
+    font-size: 1em;
+    background: #fff;
+    color: #000;
+}
 .variable-card {
     width: 90%;
     max-width: 15vw;
@@ -168,7 +196,7 @@ h1 {
     max-width: 20vw;
     height: 25vh;
     padding: 2vh;
-    margin: 2vh 0;
+    margin: 1vh 0;
 }
 
 .head {

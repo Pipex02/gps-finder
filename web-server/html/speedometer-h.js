@@ -7,7 +7,7 @@ document.addEventListener('DOMContentLoaded', function() {
         return;
     }
 
-    // Apuntar a la segunda tarjeta (índice 1)
+    // Apuntar a la segunda tarjeta (índice 1) para el velocímetro
     const secondVariableCard = variableElements[1];
     if (!secondVariableCard) {
         return;
@@ -176,12 +176,16 @@ document.addEventListener('DOMContentLoaded', function() {
         speedValueText.textContent = `${Math.round(speedValue)} km/h`;
     }
 
-    // Llamada a la API en el endpoint: '/api//coordenadas'
-    const apiEndpoint = '/api/coordenadas';
-
+    // --- Llamada a la API y sincronización ---
+    // Endpoint base para el API
+    const apiEndpoint = 'api/coordenadas';
     async function fetchVelocidad() {
         try {
-            const response = await fetch(apiEndpoint);
+            const vehicleSelect = document.getElementById('vehicleSelect');
+            const vehicleID = vehicleSelect ? vehicleSelect.value : '';
+            // Construir la URL según si hay un VehicleID seleccionado
+            const url = vehicleID ? `${apiEndpoint}?VehicleID=${vehicleID}` : apiEndpoint;
+            const response = await fetch(url);
             if (!response.ok) {
                 return null;
             }
@@ -215,22 +219,27 @@ document.addEventListener('DOMContentLoaded', function() {
         requestAnimationFrame(animateSpeedometer);
     }
 
-    fetchVelocidad().then(speed => {
-        if (speed !== null) {
-            targetSpeed = speed;
-            animateSpeedometer();
-        } else {
-            updateSpeedometer(0);
-            currentSpeed = 0;
-            targetSpeed = 0;
-        }
-    });
-
-    setInterval(async () => {
+    async function updateSpeed() {
         const speed = await fetchVelocidad();
         if (speed !== null) {
             targetSpeed = speed;
             animateSpeedometer();
         }
-    }, 5000);
+    }
+
+    // 1. Obtener el valor inicial de velocidad al cargar la página
+    updateSpeed();
+
+    // 2. Configurar un intervalo para actualizar la velocidad cada 5 segundos
+    setInterval(updateSpeed, 5000);
+
+    // 3. Actualizar el velocímetro cuando se cambie el vehículo seleccionado
+    const vehicleSelect = document.getElementById('vehicleSelect');
+    if (vehicleSelect) {
+        vehicleSelect.addEventListener('change', () => {
+            // Reiniciamos la animación al cambiar de vehículo
+            currentSpeed = 0;
+            updateSpeed();
+        });
+    }
 });
