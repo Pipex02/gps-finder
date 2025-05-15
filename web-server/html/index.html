@@ -155,7 +155,7 @@
         async function obtenerCoordenadasDesdeAPI() {
             const vehicleSelect = document.getElementById('vehicleSelect');
             const vehicleID = vehicleSelect ? vehicleSelect.value : '';
-            const url = vehicleID ? `/api/coordenadas?VehicleID=${vehicleID}` : `/api/coordenadas`;
+            const url = vehicleID ? `https://geofind-al.ddns.net/api/coordenadas?VehicleID=${vehicleID}` : `/api/coordenadas`;
 
             try {
                 const respuesta = await fetch(url);
@@ -187,12 +187,31 @@
                     
                     route.push([lat, lon]);
 
+                     const vehicleSelect = document.getElementById('vehicleSelect');
+const selectedVehicle = vehicleSelect ? vehicleSelect.value : '1';
+
+                    let carIcon;
+                    if (selectedVehicle === '1') {
+                        carIcon = L.icon({
+                            iconUrl: 'taxi.png', // Icono para Vehículo 1
+                            iconSize: [60, 60],
+                            iconAnchor: [30, 30] // Ajusta según las dimensiones reales
+                        });
+                    } else if (selectedVehicle === '2') {
+                        carIcon = L.icon({
+                            iconUrl: 'taxi1.png', // Icono para Vehículo 2
+                            iconSize: [60, 60],
+                            iconAnchor: [30, 30]
+                        });
+                    }
+
                     if (marker) {
+                        marker.setIcon(carIcon);
                         marker.setLatLng([lat, lon]);
                         marker.openPopup();
                     } else {
                         marker = L.marker([lat, lon]).addTo(map)
-                            .bindPopup("Última ubicación registrada").openPopup();
+                            .bindPopup("Última ubicación registrada", { offset: [0, -20] }).openPopup();
                     }
 
                     // Redibujar la línea de la ruta
