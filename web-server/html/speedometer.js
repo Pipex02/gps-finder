@@ -173,12 +173,16 @@ document.addEventListener('DOMContentLoaded', function() {
         speedValueText.textContent = `${Math.round(speedValue)} km/h`;
     }
 
-    // Llamada a la API en el endpoint: '/api//coordenadas'
-    const apiEndpoint = '/api//coordenadas';
-
+     // --- Llamada a la API y sincronización ---
+    // Endpoint base para el API
+    const apiEndpoint = 'https://geofind-al.ddns.net/api/coordenadas';
     async function fetchVelocidad() {
         try {
-            const response = await fetch(apiEndpoint);
+            const vehicleSelect = document.getElementById('vehicleSelect');
+            const vehicleID = vehicleSelect ? vehicleSelect.value : '';
+            // Construir la URL según si hay un VehicleID seleccionado
+            const url = vehicleID ? `${apiEndpoint}?VehicleID=${vehicleID}` : apiEndpoint;
+            const response = await fetch(url);
             if (!response.ok) {
                 return null;
             }

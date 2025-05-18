@@ -28,11 +28,21 @@ db.connect((err) => {
 
 // Ruta para obtener la última coordenada a través de la API REST
 app.get("/coordenadas", (req, res) => {
-    // Consulta para seleccionar la última fila por ID descendente
-    const query = "SELECT latitud, longitud, timestamp, velocidad, gasolina FROM coordenadas ORDER BY id DESC LIMIT 1";
+    // Leer el parámetro VehicleID de la consulta (query parameter)
+    const vehicleID = req.query.VehicleID;
+    let query = "";
+    let queryParams = [];
 
-    // Ejecutar la consulta a la base de datos
-    db.query(query, (err, results) => {
+    if(vehicleID) {
+        // Filtra por VehicleID si se ha especificado
+        query = "SELECT latitud, longitud, timestamp, velocidad, gasolina FROM coordenadas WHERE VehicleID = ? ORDER BY id DESC LIMIT 1";
+        queryParams = [vehicleID];
+    } else {
+        // Sin filtro, retorna la última coordenada registrada
+        query = "SELECT latitud, longitud, timestamp, velocidad, gasolina FROM coordenadas ORDER BY id DESC LIMIT 1";
+    }
+    
+    db.query(query, queryParams, (err, results) => {
         if (err) {
             console.error("❌ Error al obtener datos:", err);
             res.status(500).json({ error: "Error al obtener datos" });
