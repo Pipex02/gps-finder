@@ -161,7 +161,7 @@ function consultar() {
   inhabilitarBotonConsultarEspecifica();
 
 
-  fetch(`https://geofind-fe.ddns.net/api/historicos?inicio=${encodeURIComponent(startFormatted)}&fin=${encodeURIComponent(endFormatted)}`)
+  fetch(`/api/historicos?inicio=${encodeURIComponent(startFormatted)}&fin=${encodeURIComponent(endFormatted)}`)
     .then((response) => {
       if (!response.ok) throw new Error("Error en la respuesta de la API");
       return response.json();
@@ -272,7 +272,7 @@ async function consultarUbicacionEspecifica() {
   }
   currentSegmentPointsForSlider = [];
 
-  fetch(`https://geofind-fe.ddns.net/api/lugar?latitud=${clickedLat}&longitud=${clickedLng}&radio=${radius}&inicio=${encodeURIComponent(startFormatted)}&fin=${encodeURIComponent(endFormatted)}`)
+  fetch(`/api/lugar?latitud=${clickedLat}&longitud=${clickedLng}&radio=${radius}&inicio=${encodeURIComponent(startFormatted)}&fin=${encodeURIComponent(endFormatted)}`)
     .then((response) => {
       if (!response.ok) {
         response.json().then(err => {

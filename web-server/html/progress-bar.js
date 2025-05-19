@@ -104,7 +104,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // --- Lógica de FETCH con valor en porcentaje directo ---
     // Se tiene en cuenta el ID del vehículo seleccionado.
-    const apiBase = 'https://geofind-al.ddns.net/api/coordenadas';
+    const apiBase = '/api/coordenadas';
     async function fetchGasolinaLevel() {
         try {
             const vehicleSelect = document.getElementById('vehicleSelect');
