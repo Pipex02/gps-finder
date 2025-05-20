@@ -19,12 +19,17 @@ def conectar_bd():
         print(f"❌ Error al conectar con la base de datos: {e}")
         return None
 
+<<<<<<< HEAD
 # Inserta las coordenadas en la base de datos (ahora con ID del vehículo)
 def insertar_coordenadas(lat, lon, estampa, velocidad, gasolina, vehiculo):
+=======
+def insertar_coordenadas(lat, lon, estampa, velocidad, gasolina, VehicleID):
+>>>>>>> origin/main
     conexion = conectar_bd()
     if conexion:
         try:
             with conexion.cursor() as cursor:
+<<<<<<< HEAD
                 # Seleccionar tabla según el vehículo
                 tabla = f"coordenadas_vehiculo{vehiculo}"
                 
@@ -35,6 +40,14 @@ def insertar_coordenadas(lat, lon, estampa, velocidad, gasolina, vehiculo):
                 cursor.execute(sql, (lat, lon, estampa, velocidad, gasolina))
                 conexion.commit()
                 print(f"✅ Datos insertados en {tabla}: {lat}, {lon}, {estampa}, {velocidad}, {gasolina}")
+=======
+                # Se inserta respetando el orden de la tabla:
+                # latitud, longitud, timestamp, velocidad, gasolina, VehicleID
+                sql = "INSERT INTO coordenadas (latitud, longitud, timestamp, velocidad, gasolina, VehicleID) VALUES (%s, %s, %s, %s, %s, %s)"
+                cursor.execute(sql, (lat, lon, estampa, velocidad, gasolina, VehicleID))
+                conexion.commit()
+                print(f"✅ Datos insertados: {lat}, {lon}, {estampa}, {velocidad}, {gasolina}, {VehicleID}")
+>>>>>>> origin/main
         except pymysql.MySQLError as e:
             print(f"❌ Error en la base de datos: {e}")
         finally:
@@ -54,10 +67,12 @@ def sniffer():
     try:
         while True:
             try:
-                datos, direccion = servidor.recvfrom(1024)  
-                print(f"🔗 Paquete recibido de {direccion[0]}: {datos.decode('utf-8')}")
+                datos, direccion = servidor.recvfrom(1024)
+                mensaje = datos.decode('utf-8').strip()
+                print(f"🔗 Paquete recibido de {direccion[0]}: {mensaje}")
 
                 try:
+<<<<<<< HEAD
                     # Extraer 6 valores (nuevo campo: vehículo)
                     partes = datos.decode('utf-8').strip().split(',')
                     
@@ -79,11 +94,27 @@ def sniffer():
                     # Llamar a la función con el nuevo parámetro
                     insertar_coordenadas(lat, lon, estampa, velocidad, gasolina, vehiculo)
 
+=======
+                    # Extraer latitud, longitud, estampa, velocidad, gasolina, VehicleID del paquete
+                    lat, lon, estampa, velocidad, gasolina, VehicleID = mensaje.split(',')
+                    lat = float(lat)
+                    lon = float(lon)
+                    velocidad = float(velocidad)
+                    gasolina = float(gasolina)
+                    VehicleID = int(VehicleID)
+                    
+                    # Inserta los datos en la base de datos
+                    insertar_coordenadas(lat, lon, estampa, velocidad, gasolina, VehicleID)
+>>>>>>> origin/main
                 except Exception as e:
                     print(f"❌ Error procesando datos: {e}")
 
             except socket.timeout:
+<<<<<<< HEAD
                 continue  
+=======
+                continue  # 🔹 Evita bloqueo indefinido
+>>>>>>> origin/main
 
     except KeyboardInterrupt:
         print("\n⏹️ Sniffer detenido por el usuario.")
