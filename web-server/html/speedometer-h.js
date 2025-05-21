@@ -178,7 +178,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // --- Llamada a la API y sincronización ---
     // Endpoint base para el API
-    const apiEndpoint = 'api/coordenadas';
+    const apiEndpoint = 'https://geofind-fe.ddns.net/api/coordenadas';
     async function fetchVelocidad() {
         try {
             const vehicleSelect = document.getElementById('vehicleSelect');
