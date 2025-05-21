@@ -120,11 +120,12 @@
         </div>
     </div>
     <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+    <!-- Include the refactored variable components -->
     <script src="progress-bar.js"></script>
     <script src="speedometer.js"></script>
     <script>
         async function getConfig() {
-            const response = await fetch('/api/config'); 
+            const response = await fetch('/api/config');
             if (!response.ok) throw new Error("Error al obtener la configuración");
             const config = await response.json();
             return config;
@@ -135,8 +136,23 @@
                 if (config.pageTitle) {
                     document.getElementById('page-title').textContent = config.pageTitle || "Geo Finder";
                 }
+
+                // Initialize variable components
+                const gasolinaContainer = document.getElementById('gasolina');
+                if (gasolinaContainer) {
+                    window.gasolinaProgressBar = createProgressBar(gasolinaContainer, 0); // Initialize with 0
+                }
+                const velocidadContainer = document.getElementById('velocidad');
+                 if (velocidadContainer) {
+                    window.velocidadSpeedometer = createSpeedometer(velocidadContainer, 0); // Initialize with 0
+                }
+
+                // Initial data fetch and set up interval
+                obtenerCoordenadasDesdeAPI();
+                setInterval(obtenerCoordenadasDesdeAPI, 5000);
+
             } catch (error) {
-                console.error("Error al cargar la configuración:", error);
+                console.error("Error al cargar la configuración o inicializar:", error);
             }
         });
     </script>
@@ -147,7 +163,7 @@
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             attribution: '&copy; OpenStreetMap contributors'
         }).addTo(map);
-        
+
         var marker;  // Variable para el marcador
         var route = [];  // Almacena la ruta recorrida
         var polyline = L.polyline([], {color: '#004e92', weight: 6}).addTo(map); // Línea de la ruta
@@ -155,7 +171,7 @@
         async function obtenerCoordenadasDesdeAPI() {
             const vehicleSelect = document.getElementById('vehicleSelect');
             const vehicleID = vehicleSelect ? vehicleSelect.value : '';
-            const url = vehicleID ? `/api/coordenadas?VehicleID=${vehicleID}` : `/api/coordenadas`;
+            const url = vehicleID ? `https://geofind-fe.ddns.net/api/coordenadas?VehicleID=${vehicleID}` : `/api/coordenadas`;
 
             try {
                 const respuesta = await fetch(url);
@@ -168,8 +184,9 @@
                     document.getElementById("latitud").innerText = "0";
                     document.getElementById("longitud").innerText = "0";
                     document.getElementById("timestamp").innerText = "0";
-                    //document.getElementById("gasolina").innerText = "0";
-                   // document.getElementById("velocidad").innerText = "0";
+                    // Update variable components with 0
+                    if (window.gasolinaProgressBar) window.gasolinaProgressBar.update(0);
+                    if (window.velocidadSpeedometer) window.velocidadSpeedometer.update(0);
                     return;
                 }
                 if (datos.latitud && datos.longitud && datos.timestamp) {
@@ -179,16 +196,17 @@
                         return timestamp.replace("T", " ").split(".")[0];
                     }
                     document.getElementById("timestamp").innerText = formatearTimestamp(datos.timestamp);
-                    //document.getElementById("gasolina").innerText = datos.gasolina;
-                    //document.getElementById("velocidad").innerText = datos.velocidad;
-                    
+
+                    // Update variable components
+                    if (window.gasolinaProgressBar) window.gasolinaProgressBar.update(datos.gasolina);
+                    if (window.velocidadSpeedometer) window.velocidadSpeedometer.update(datos.velocidad);
+
                     var lat = parseFloat(datos.latitud);
                     var lon = parseFloat(datos.longitud);
-                    
+
                     route.push([lat, lon]);
 
-                     const vehicleSelect = document.getElementById('vehicleSelect');
-const selectedVehicle = vehicleSelect ? vehicleSelect.value : '1';
+                    const selectedVehicle = vehicleSelect ? vehicleSelect.value : '1';
 
                     let carIcon;
                     if (selectedVehicle === '1') {
@@ -223,17 +241,20 @@ const selectedVehicle = vehicleSelect ? vehicleSelect.value : '1';
                     document.getElementById("latitud").innerText = "0";
                     document.getElementById("longitud").innerText = "0";
                     document.getElementById("timestamp").innerText = "0";
-                    //document.getElementById("gasolina").innerText = "0";
-                    //document.getElementById("velocidad").innerText = "0";
+                    // Update variable components with 0
+                    if (window.gasolinaProgressBar) window.gasolinaProgressBar.update(0);
+                    if (window.velocidadSpeedometer) window.velocidadSpeedometer.update(0);
                 }
             } catch (error) {
                 console.error('❌ Error al obtener datos:', error);
+                 // Update variable components with 0 on error
+                if (window.gasolinaProgressBar) window.gasolinaProgressBar.update(0);
+                if (window.velocidadSpeedometer) window.velocidadSpeedometer.update(0);
             }
         }
-        obtenerCoordenadasDesdeAPI();
-        setInterval(obtenerCoordenadasDesdeAPI, 5000);
+        // Initial call and interval are now handled in the DOMContentLoaded listener
         document.getElementById('vehicleSelect').addEventListener('change', function() {
-            // Si deseas reiniciar la trayectoria, descomenta la siguiente línea:
+            // If you want to reset the trajectory, uncomment the following line:
             route = [];
             obtenerCoordenadasDesdeAPI();
         });

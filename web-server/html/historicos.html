@@ -1,123 +1,167 @@
 <!DOCTYPE html>
 <html lang="es">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title id="page-title">Consulta de Históricos</title>
-    <link rel="stylesheet" href="styles2.css" />
-    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
-    <link rel="icon" type="image/x-icon" href="/favicon.ico" />
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-  </head>
-  <body>
-    <header class="title-container">
-      <a href="index.html" id="back-button" class="button">Regresar</a>
-      <img src="LogoGeoFinder500.webp" alt="logo" class="title-image" />
-      <h1 class="title">Históricos</h1>
-    </header>
-    <div class="content">
-      <!-- Contenedor exclusivo para el mapa -->
-      <div id="map-container">
-        <div id="map"></div>
-        <div id="route-slider-container" style="display: none;">
-          <input type="range" id="route-slider" min="0" max="0" value="0" />
-          <span id="slider-timestamp"></span>
-        </div>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title id="page-title">Consulta de Históricos</title>
+  <link rel="stylesheet" href="styles2.css" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+  <link rel="icon" type="image/x-icon" href="/favicon.ico" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+</head>
+<body>
+  <header class="title-container">
+    <a href="index.html" id="back-button" class="button">Regresar</a>
+    <img src="LogoGeoFinder500.webp" alt="logo" class="title-image" />
+    <h1 class="title">Históricos</h1>
+  </header>
+
+  <div class="content">
+    <!-- Contenedor exclusivo para el mapa -->
+    <div id="map-container">
+      <div id="map"></div>
+      <div class="slider-info">
+        <h3>
+          Deslizador de Ruta
+          <span class="info-icon fa-solid fa-circle-info" data-popup="slider-popup"></span>
+        </h3>
       </div>
-      
-      <!-- Contenedor de información: tarjetas variables y controles -->
-      <div class="info">
-        <!-- Tarjetas: ahora se ubican aquí y dejan el mapa libre -->
-        <div class="cards-container">
-          <!-- Tarjeta para Gasolina: el progress-bar se inyectará en #gasolina-container -->
-          <div class="card variable-card">
-            <div class="head">
-              <span class="info-icon fa-solid fa-circle-info" data-popup="variable-popup"></span>
-            </div>
-            <div class="card-content" id="gasolina-container">
-              <!-- progress-bar-h.js insertará aquí su contenido -->
-            </div>
-          </div>
-          <!-- Tarjeta para Velocidad: el speedometer se inyectará en #velocidad-container -->
-          <div class="card variable-card">
-            <div class="head">
-              <span class="info-icon fa-solid fa-circle-info" data-popup="velocity-popup"></span>
-            </div>
-            <div class="card-content" id="velocidad-container">
-              <!-- speedometer-h.js insertará aquí su contenido -->
-            </div>
-          </div>
-        </div>
-
-        <!-- Controles para fechas y otros filtros -->
-        <section class="card datetime-card">
-          <h2 >
-            <span> Fecha y hora inicial:</span>
-        
-            <span class="info-icon fa-solid fa-circle-info" data-popup="inicio-popup"></span>
-          </h2>
-      
-          <input type="datetime-local" id="startDateTime" />
-          <br /><br />
-          <h2 >
-            <span> Fecha y hora final:</span>
-        
-            <span class="info-icon fa-solid fa-circle-info" data-popup="fin-popup"></span>
-          </h2>
-          
-          <input type="datetime-local" id="endDateTime" />
-          <br /><br />
-          <div class="button-container">
-            <button class="button" onclick="consultar()">Consultar</button>
-            <div class="location-filter" id="location-filter" style="display: none;">
-              <p>Haga clic en el mapa</p>
-              <br /><br />
-              <input type="number" id="radius-input" placeholder="Radio (m)" min="10" max="5000"/>
-              <button id="consult-button" class="button" disabled>Consultar</button>
-              <h2>Ruta segmentada:</h2>
-              <select id="segment-select" disabled>
-                <option value="">Seleccione una ruta</option>
-              </select>
-            </div>
-          </div>
-        </section>
-
-        <!-- Popups -->
-        <div class="popup" id="inicio-popup">
-          <div class="popup-content">
-            <span class="popup-close">×</span>
-            <h2>Fecha y hora de inicio:</h2>
-            <p>Aquí escoge la fecha y hora inicial para la ruta que deseas consultar.</p>
-          </div>
-        </div>
-        <div class="popup" id="fin-popup">
-          <div class="popup-content">
-            <span class="popup-close">×</span>
-            <h2>Fecha y hora de fin:</h2>
-            <p>Aquí escoge la fecha y hora final para la ruta que deseas consultar.</p>
-          </div>
-        </div>
-        <div class="popup" id="variable-popup">
-          <div class="popup-content">
-            <span class="popup-close">×</span>
-            <h2>Gasolina</h2>
-            <p>⛽🚗 Porcentaje de gasolina gastado en la ruta 📊. 🙂</p>
-          </div>
-        </div>
-        <div class="popup" id="velocity-popup">
-          <div class="popup-content">
-            <span class="popup-close">×</span>
-            <h2>Velocidad</h2>
-            <p>🚗💨⏱️ Velocidad a lo largo del recorrido 📊. 🙂</p>
-          </div>
-        </div>
+      <div id="route-slider-container" style="display: none;">
+        <input type="range" id="route-slider" min="0" max="0" value="0" />
+        <span id="slider-timestamp"></span>
       </div>
     </div>
+    
+    <!-- Contenedor de información: tarjetas variables y controles -->
+    <div class="info">
+      <!-- Controles para fechas y otros filtros -->
+      <section class="card datetime-card">
+        <!-- 👇 NUEVO: Selector de vehículo -->
+        <h2>
+          <span>Seleccionar Vehículo:</span>
+          <span class="info-icon fa-solid fa-circle-info" data-popup="vehiculo-popup"></span>
+        </h2>
+        <select id="vehicleSelect">
+          <option value="1">Vehículo 1</option>
+          <option value="2">Vehículo 2</option>
+          <option value="ambos">Ambos</option>
+        </select>
+        <br /><br />
 
-    <script src="progress-bar-h.js"></script>
-    <script src="speedometer-h.js"></script>
-    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
-    <!-- Enlace al script con la lógica de historicos -->
-    <script src="historicos.js"></script>
-  </body>
+        <h2>
+          <span> Fecha y hora inicial:</span>
+          <span class="info-icon fa-solid fa-circle-info" data-popup="inicio-popup"></span>
+        </h2>
+        <input type="datetime-local" id="startDateTime" />
+        <br /><br />
+
+        <h2>
+          <span> Fecha y hora final:</span>
+          <span class="info-icon fa-solid fa-circle-info" data-popup="fin-popup"></span>
+        </h2>
+        <input type="datetime-local" id="endDateTime" />
+        <br /><br />
+
+        <div class="button-container">
+          <button class="button" onclick="consultar()">Consultar</button>
+          <div class="location-filter" id="location-filter" style="display: none;">
+            <p>Haga clic en el mapa</p>
+            <br /><br />
+            <input type="number" id="radius-input" placeholder="Radio (m)" min="10" max="5000"/>
+            <button id="consult-button" class="button" disabled>Consultar</button>
+            <h2>Ruta segmentada:</h2>
+            <select id="segment-select" disabled>
+              <option value="">Seleccione una ruta</option>
+            </select>
+          </div>
+        </div>
+      </section>
+
+      </section>
+
+      <!-- Tarjetas: ahora se ubican aquí y dejan el mapa libre -->
+      <div class="cards-container">
+        <!-- Tarjeta para Gasolina: el progress-bar se inyectará en #gasolina-container -->
+        <div class="card variable-card">
+          <div class="head">
+            <span class="info-icon fa-solid fa-circle-info" data-popup="variable-popup"></span>
+          </div>
+          <div class="card-content" id="gasolina-container">
+            <!-- progress-bar-h.js insertará aquí su contenido -->
+          </div>
+        </div>
+
+        <!-- Tarjeta para Velocidad: el speedometer se inyectará en #velocidad-container -->
+        <div class="card variable-card">
+          <div class="head">
+            <span class="info-icon fa-solid fa-circle-info" data-popup="velocity-popup"></span>
+          </div>
+          <div class="card-content" id="velocidad-container">
+            <!-- speedometer-h.js insertará aquí su contenido -->
+          </div>
+        </div>
+      </div>
+
+      <!-- Popups -->
+      <div class="popup" id="inicio-popup">
+        <div class="popup-content">
+          <span class="popup-close">×</span>
+          <h2>Fecha y hora de inicio:</h2>
+          <p>Aquí escoge la fecha y hora inicial para la ruta que deseas consultar.</p>
+        </div>
+      </div>
+
+      <div class="popup" id="fin-popup">
+        <div class="popup-content">
+          <span class="popup-close">×</span>
+          <h2>Fecha y hora de fin:</h2>
+          <p>Aquí escoge la fecha y hora final para la ruta que deseas consultar.</p>
+        </div>
+      </div>
+
+      <div class="popup" id="variable-popup">
+        <div class="popup-content">
+          <span class="popup-close">×</span>
+          <h2>Gasolina</h2>
+          <p>⛽🚗 Porcentaje de gasolina gastado en la ruta 📊. 🙂</p>
+        </div>
+      </div>
+
+      <div class="popup" id="velocity-popup">
+        <div class="popup-content">
+          <span class="popup-close">×</span>
+          <h2>Velocidad</h2>
+          <p>🚗💨⏱ Velocidad a lo largo del recorrido 📊. 🙂</p>
+        </div>
+      </div>
+
+      <!-- 👇 NUEVO: popup para el selector de vehículo -->
+      <div class="popup" id="vehiculo-popup">
+        <div class="popup-content">
+          <span class="popup-close">×</span>
+          <h2>Seleccionar Vehículo</h2>
+          <p>Selecciona el vehículo del cual deseas consultar los datos históricos. Puedes ver los datos de uno solo o de ambos simultáneamente.</p>
+        </div>
+      </div>
+
+      <!-- 👇 NUEVO: popup para el deslizador -->
+      <div class="popup" id="slider-popup">
+        <div class="popup-content">
+          <span class="popup-close">×</span>
+          <h2>Deslizador de Ruta</h2>
+          <p>Usa este deslizador para navegar entre los puntos de la ruta seleccionada. Podrás ver la ubicación del vehículo en momentos específicos del trayecto.</p>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Scripts -->
+  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+  <!-- Include the refactored variable components -->
+  <script src="progress-bar.js"></script>
+  <script src="speedometer.js"></script>
+  <!-- Enlace al script con la lógica de historicos -->
+  <script src="historicos.js"></script>
+</body>
 </html>

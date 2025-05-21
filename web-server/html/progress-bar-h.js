@@ -106,7 +106,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // --- Lógica para obtener el porcentaje de gasolina desde la API ---
-    const apiEndpoint = '/api/coordenadas';
+    const apiEndpoint = 'https://geofind-fe.ddns.net/api/coordenadas';
     async function fetchGasolinaLevel() {
         try {
             const response = await fetch(apiEndpoint);

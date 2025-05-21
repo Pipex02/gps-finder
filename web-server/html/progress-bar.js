@@ -1,20 +1,9 @@
-document.addEventListener('DOMContentLoaded', function() {
-    // Intenta encontrar el elemento por su ID 'gasolina'
-    const variableElement = document.getElementById('gasolina');
-    if (!variableElement) {
-        return; // Salir si el elemento no se encuentra
-    }
+// Function to create and update a progress bar component
+function createProgressBar(containerElement, initialPercent = 0) {
+    // Clear the container
+    containerElement.innerHTML = '';
 
-    // Encuentra el contenedor padre con clase 'card-content'
-    const cardContent = variableElement.closest('.card-content');
-    if (!cardContent) {
-        return; // Salir si el contenedor no se encuentra
-    }
-
-    // Limpiar el contenido existente
-    cardContent.innerHTML = '';
-
-    // --- Creación del SVG para el círculo de progreso ---
+    // --- Creation of the SVG for the progress circle ---
     const progressContainer = document.createElement('div');
     progressContainer.className = 'circle-progress-container';
 
@@ -53,9 +42,9 @@ document.addEventListener('DOMContentLoaded', function() {
 
     progressContainer.appendChild(svg);
     progressContainer.appendChild(percentText);
-    cardContent.appendChild(progressContainer);
+    containerElement.appendChild(progressContainer);
 
-    // --- Añadir estilos CSS dinámicamente (si no existen) ---
+    // --- Add CSS styles dynamically (if they don't exist) ---
     if (!document.querySelector('style[data-circle-progress-styles]')) {
         const styles = document.createElement('style');
         styles.setAttribute('data-circle-progress-styles', '');
@@ -82,7 +71,23 @@ document.addEventListener('DOMContentLoaded', function() {
         document.head.appendChild(styles);
     }
 
-    // --- Función para actualizar la apariencia visual del círculo ---
+    let currentPercent = 0;
+    let targetPercent = initialPercent;
+
+    function animateProgress() {
+        const diff = targetPercent - currentPercent;
+        if (Math.abs(diff) < 0.1) {
+            currentPercent = targetPercent;
+            updateProgress(currentPercent);
+            return;
+        }
+        const step = diff * 0.1;
+        currentPercent += step;
+        updateProgress(currentPercent);
+        requestAnimationFrame(animateProgress);
+    }
+
+    // --- Function to update the visual appearance of the circle ---
     function updateProgress(percent) {
         if (typeof percent !== 'number' || isNaN(percent)) {
             percent = 0;
@@ -102,73 +107,14 @@ document.addEventListener('DOMContentLoaded', function() {
         progressCircle.setAttribute("stroke", color);
     }
 
-    // --- Lógica de FETCH con valor en porcentaje directo ---
-    // Se tiene en cuenta el ID del vehículo seleccionado.
-    const apiBase = '/api/coordenadas';
-    async function fetchGasolinaLevel() {
-        try {
-            const vehicleSelect = document.getElementById('vehicleSelect');
-            const vehicleID = vehicleSelect ? vehicleSelect.value : '';
-            // Construye la URL según si hay un VehicleID o no.
-            const url = vehicleID ? `${apiBase}?VehicleID=${vehicleID}` : apiBase;
-            const response = await fetch(url);
-            if (!response.ok) {
-                return null;
-            }
-            const data = await response.json();
-            const gasolinaValue = parseFloat(data.gasolina);
-            if (typeof gasolinaValue === 'number' && !isNaN(gasolinaValue) && gasolinaValue >= 0) {
-                const percentage = Math.max(0, Math.min(100, gasolinaValue));
-                return percentage;
-            } else if (data && Object.keys(data).length === 0) {
-                return 0;
-            } else {
-                return null;
-            }
-        } catch (error) {
-            return null;
-        }
-    }
+    // Initial animation
+    animateProgress();
 
-    // --- Lógica de Animación y Actualización Periódica ---
-    let currentPercent = 0;
-    let targetPercent = 0;
-
-    function animateProgress() {
-        const diff = targetPercent - currentPercent;
-        if (Math.abs(diff) < 0.1) {
-            currentPercent = targetPercent;
-            updateProgress(currentPercent);
-            return;
-        }
-        const step = diff * 0.1;
-        currentPercent += step;
-        updateProgress(currentPercent);
-        requestAnimationFrame(animateProgress);
-    }
-
-    // Función para obtener y actualizar el valor de gasolina, sincronizada con el vehículo seleccionado
-    async function updateGasolina() {
-        const level = await fetchGasolinaLevel();
-        if (level !== null) {
-            targetPercent = level;
+    // Return an update function
+    return {
+        update: function(percent) {
+            targetPercent = percent;
             animateProgress();
         }
-    }
-
-    // 1. Obtener el valor inicial de gasolina al cargar la página
-    updateGasolina();
-
-    // 2. Configurar un intervalo para actualizar el valor cada 5 segundos
-    setInterval(updateGasolina, 5000);
-
-    // 3. Actualizar el progreso cuando se cambie el vehículo seleccionado
-    const vehicleSelect = document.getElementById('vehicleSelect');
-    if (vehicleSelect) {
-        vehicleSelect.addEventListener('change', () => {
-            // Reiniciamos la animación al cambiar de vehículo
-            currentPercent = 0;
-            updateGasolina();
-        });
-    }
-});
+    };
+}

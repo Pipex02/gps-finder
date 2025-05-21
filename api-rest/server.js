@@ -71,14 +71,22 @@ app.get("/historicos", (req, res) => {
         return res.status(400).json({ error: "Debe proporcionar fechas de inicio y fin." });
     }
 
-    const query = `
-        SELECT latitud, longitud, timestamp 
-        FROM coordenadas 
-        WHERE timestamp BETWEEN ? AND ? 
-        ORDER BY timestamp ASC
+    const vehicleID = req.query.VehicleID;
+    let query = `
+        SELECT vehicle_id, latitud, longitud, timestamp, velocidad, gasolina
+        FROM coordenadas
+        WHERE timestamp BETWEEN ? AND ?
     `;
+    const queryParams = [inicio, fin];
 
-    db.query(query, [inicio, fin], (err, results) => {
+    if (vehicleID) {
+        query += ` AND VehicleID = ?`;
+        queryParams.push(vehicleID);
+    }
+
+    query += ` ORDER BY timestamp ASC`;
+
+    db.query(query, queryParams, (err, results) => {
         if (err) {
             console.error("❌ Error al obtener datos históricos:", err);
             res.status(500).json({ error: "Error al obtener datos históricos" });
