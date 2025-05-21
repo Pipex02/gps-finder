@@ -92,9 +92,12 @@ app.get("/historicos", (req, res) => {
             res.status(500).json({ error: "Error al obtener datos históricos" });
         } else {
             res.json(results.map(row => ({
+                vehicle_id: row.vehicle_id,
                 latitud: parseFloat(row.latitud).toFixed(5),
                 longitud: parseFloat(row.longitud).toFixed(5),
-                timestamp: row.timestamp
+                timestamp: row.timestamp,
+                velocidad: parseFloat(row.velocidad),
+                gasolina: parseFloat(row.gasolina)
             })));
         }
     });
