@@ -34,29 +34,6 @@
     
     <!-- Contenedor de información: tarjetas variables y controles -->
     <div class="info">
-      <!-- Tarjetas: ahora se ubican aquí y dejan el mapa libre -->
-      <div class="cards-container">
-        <!-- Tarjeta para Gasolina: el progress-bar se inyectará en #gasolina-container -->
-        <div class="card variable-card">
-          <div class="head">
-            <span class="info-icon fa-solid fa-circle-info" data-popup="variable-popup"></span>
-          </div>
-          <div class="card-content" id="gasolina-container">
-            <!-- progress-bar-h.js insertará aquí su contenido -->
-          </div>
-        </div>
-
-        <!-- Tarjeta para Velocidad: el speedometer se inyectará en #velocidad-container -->
-        <div class="card variable-card">
-          <div class="head">
-            <span class="info-icon fa-solid fa-circle-info" data-popup="velocity-popup"></span>
-          </div>
-          <div class="card-content" id="velocidad-container">
-            <!-- speedometer-h.js insertará aquí su contenido -->
-          </div>
-        </div>
-      </div>
-
       <!-- Controles para fechas y otros filtros -->
       <section class="card datetime-card">
         <!-- 👇 NUEVO: Selector de vehículo -->
@@ -99,6 +76,31 @@
           </div>
         </div>
       </section>
+
+      </section>
+
+      <!-- Tarjetas: ahora se ubican aquí y dejan el mapa libre -->
+      <div class="cards-container">
+        <!-- Tarjeta para Gasolina: el progress-bar se inyectará en #gasolina-container -->
+        <div class="card variable-card">
+          <div class="head">
+            <span class="info-icon fa-solid fa-circle-info" data-popup="variable-popup"></span>
+          </div>
+          <div class="card-content" id="gasolina-container">
+            <!-- progress-bar-h.js insertará aquí su contenido -->
+          </div>
+        </div>
+
+        <!-- Tarjeta para Velocidad: el speedometer se inyectará en #velocidad-container -->
+        <div class="card variable-card">
+          <div class="head">
+            <span class="info-icon fa-solid fa-circle-info" data-popup="velocity-popup"></span>
+          </div>
+          <div class="card-content" id="velocidad-container">
+            <!-- speedometer-h.js insertará aquí su contenido -->
+          </div>
+        </div>
+      </div>
 
       <!-- Popups -->
       <div class="popup" id="inicio-popup">
@@ -156,6 +158,9 @@
 
   <!-- Scripts -->
   <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+  <!-- Include the refactored variable components -->
+  <script src="progress-bar.js"></script>
+  <script src="speedometer.js"></script>
   <!-- Enlace al script con la lógica de historicos -->
   <script src="historicos.js"></script>
 </body>

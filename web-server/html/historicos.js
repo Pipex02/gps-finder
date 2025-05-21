@@ -40,6 +40,12 @@ const locationFilterDiv = document.getElementById("location-filter");
 const routeSliderContainer = document.getElementById('route-slider-container');
 const routeSlider = document.getElementById('route-slider');
 const sliderTimestampSpan = document.getElementById('slider-timestamp');
+const gasolinaContainer = document.getElementById('gasolina-container');
+const velocidadContainer = document.getElementById('velocidad-container');
+
+// Variable component instances
+let gasolinaProgressBar;
+let velocidadSpeedometer;
 
 // Configuración inicial de fechas
 const minDate = new Date("2025-03-25T00:00:00");
@@ -170,16 +176,39 @@ function consultar() {
       return response.json();
     })
     .then((data) => {
+      // Clear existing markers and polylines
       if (startMarker) map.removeLayer(startMarker);
       if (endMarker) map.removeLayer(endMarker);
       startMarker = null;
       endMarker = null;
+      if (polyline) polyline.setLatLngs([]);
+      // Remove all existing vehicle polylines if any
+      map.eachLayer(layer => {
+          if (layer instanceof L.Polyline && layer !== polyline) {
+              map.removeLayer(layer);
+          }
+          // Also remove vehicle start/end markers
+          if (layer instanceof L.Marker && layer.options.icon && layer.options.icon.options.className === "custom-marker") {
+              map.removeLayer(layer);
+          }
+      });
+
 
       if (!data || data.length === 0) {
         alert("No hay datos en este rango de tiempo.");
-        if (polyline) polyline.setLatLngs([]);
+        // Hide variable cards and slider if no data
+        document.querySelector('.cards-container').style.display = 'none';
+        if (routeSliderContainer) routeSliderContainer.style.display = 'none';
+        if (sliderMarker) {
+            map.removeLayer(sliderMarker);
+            sliderMarker = null;
+        }
+        currentSegmentPointsForSlider = [];
         return;
       }
+
+      // Show variable cards container
+      document.querySelector('.cards-container').style.display = 'flex';
 
       if (vehicleID === "ambos") {
         const vehiculos = {};
@@ -192,6 +221,9 @@ function consultar() {
           "1": "#FFD700", // Amarillo
           "2": "#000000"  // Negro
         };
+
+        // Store data for both vehicles for slider and variable updates
+        window.vehicleData = vehiculos;
 
         Object.entries(vehiculos).forEach(([id, coords]) => {
           const route = coords.map(c => [parseFloat(c.latitud), parseFloat(c.longitud)]);
@@ -212,16 +244,69 @@ function consultar() {
                 icon: L.divIcon({
                   className: "custom-marker",
                   html: `<div style="color: white; font-weight: bold; background: ${color}; padding: 8px; border-radius: 50%; text-align: center;">${id}B</div>`,
-                  iconSize: [35, 35],
-                }),
-              }).bindPopup(`Fin Vehículo ${id}: ${coords[coords.length - 1].timestamp}`).addTo(map);
+                iconSize: [35, 35],
+              }),
+            }).bindPopup(`Fin Vehículo ${id}: ${coords[coords.length - 1].timestamp}`).addTo(map);
             }
           }
-
-          map.fitBounds(vehiclePolyline.getBounds());
         });
 
-      } else {
+        // Fit bounds to include all polylines
+        const allPoints = data.map(c => [parseFloat(c.latitud), parseFloat(c.longitud)]);
+        if (allPoints.length > 0) {
+             map.fitBounds(L.polyline(allPoints).getBounds());
+        }
+
+
+        // Initialize and update variable components for Vehicle 1 (as per plan)
+        const vehicle1Data = vehiculos["1"] || [];
+        if (vehicle1Data.length > 0) {
+            const latestData = vehicle1Data[vehicle1Data.length - 1];
+            if (gasolinaProgressBar) {
+                gasolinaProgressBar.update(latestData.gasolina);
+            } else {
+                if (gasolinaContainer) {
+                    gasolinaProgressBar = createProgressBar(gasolinaContainer, latestData.gasolina);
+                }
+            }
+             if (velocidadSpeedometer) {
+                velocidadSpeedometer.update(latestData.velocidad);
+            } else {
+                 if (velocidadContainer) {
+                    velocidadSpeedometer = createSpeedometer(velocidadContainer, latestData.velocidad);
+                }
+            }
+        } else {
+             if (gasolinaProgressBar) gasolinaProgressBar.update(0);
+             if (velocidadSpeedometer) velocidadSpeedometer.update(0);
+        }
+
+
+        // Prepare data for the single slider (using Vehicle 1 data as the primary reference)
+        currentSegmentPointsForSlider = vehicle1Data.map(coord => ({
+             latlng: L.latLng(parseFloat(coord.latitud), parseFloat(coord.longitud)),
+             timestamp: coord.timestamp,
+             vehicle_id: coord.vehicle_id,
+             velocidad: coord.velocidad,
+             gasolina: coord.gasolina
+        }));
+
+        if (currentSegmentPointsForSlider.length > 0) {
+            routeSlider.min = 0;
+            routeSlider.max = currentSegmentPointsForSlider.length - 1;
+            routeSlider.value = 0;
+            if (routeSliderContainer) routeSliderContainer.style.display = 'flex';
+            updateSliderMarker(0); // Update marker for the first point
+        } else {
+             if (routeSliderContainer) routeSliderContainer.style.display = 'none';
+             if (sliderMarker) {
+                map.removeLayer(sliderMarker);
+                sliderMarker = null;
+            }
+        }
+
+
+      } else { // Single vehicle selected
         const filteredData = data.filter(coord => coord.vehicle_id == vehicleID);
         const route = filteredData.map((coord) => [parseFloat(coord.latitud), parseFloat(coord.longitud)]);
         polyline.setLatLngs(route);
@@ -245,9 +330,65 @@ function consultar() {
               }),
             }).bindPopup(`Fin: ${filteredData[filteredData.length - 1].timestamp}`).addTo(map);
           }
-        }
+           map.fitBounds(polyline.getBounds());
 
-        map.fitBounds(polyline.getBounds());
+           // Initialize and update variable components for the selected vehicle
+            if (filteredData.length > 0) {
+                const latestData = filteredData[filteredData.length - 1];
+                 if (gasolinaProgressBar) {
+                    gasolinaProgressBar.update(latestData.gasolina);
+                } else {
+                    if (gasolinaContainer) {
+                        gasolinaProgressBar = createProgressBar(gasolinaContainer, latestData.gasolina);
+                    }
+                }
+                 if (velocidadSpeedometer) {
+                    velocidadSpeedometer.update(latestData.velocidad);
+                } else {
+                     if (velocidadContainer) {
+                        velocidadSpeedometer = createSpeedometer(velocidadContainer, latestData.velocidad);
+                    }
+                }
+            } else {
+                 if (gasolinaProgressBar) gasolinaProgressBar.update(0);
+                 if (velocidadSpeedometer) velocidadSpeedometer.update(0);
+            }
+
+
+           // Prepare data for the slider
+            currentSegmentPointsForSlider = filteredData.map(coord => ({
+                 latlng: L.latLng(parseFloat(coord.latitud), parseFloat(coord.longitud)),
+                 timestamp: coord.timestamp,
+                 vehicle_id: coord.vehicle_id,
+                 velocidad: coord.velocidad,
+                 gasolina: coord.gasolina
+            }));
+
+            if (currentSegmentPointsForSlider.length > 0) {
+                routeSlider.min = 0;
+                routeSlider.max = currentSegmentPointsForSlider.length - 1;
+                routeSlider.value = 0;
+                if (routeSliderContainer) routeSliderContainer.style.display = 'flex';
+                updateSliderMarker(0); // Update marker for the first point
+            } else {
+                 if (routeSliderContainer) routeSliderContainer.style.display = 'none';
+                 if (sliderMarker) {
+                    map.removeLayer(sliderMarker);
+                    sliderMarker = null;
+                }
+            }
+
+        } else {
+             map.fitBounds(polyline.getBounds());
+             // Hide variable cards and slider if no data
+            document.querySelector('.cards-container').style.display = 'none';
+            if (routeSliderContainer) routeSliderContainer.style.display = 'none';
+             if (sliderMarker) {
+                map.removeLayer(sliderMarker);
+                sliderMarker = null;
+            }
+            currentSegmentPointsForSlider = [];
+        }
       }
 
       if (locationFilterDiv) locationFilterDiv.style.display = "block";
@@ -255,13 +396,158 @@ function consultar() {
     .catch((error) => {
       console.error("Error al obtener datos históricos:", error);
       alert("Error al consultar la API. Intenta de nuevo.");
+      // Clear map elements on error
       if (polyline) polyline.setLatLngs([]);
       if (startMarker) map.removeLayer(startMarker);
       if (endMarker) map.removeLayer(endMarker);
       startMarker = null;
       endMarker = null;
+       map.eachLayer(layer => {
+          if (layer instanceof L.Polyline && layer !== polyline) {
+              map.removeLayer(layer);
+          }
+           if (layer instanceof L.Marker && layer.options.icon && layer.options.icon.options.className === "custom-marker") {
+              map.removeLayer(layer);
+          }
+      });
+      // Hide variable cards and slider on error
+      document.querySelector('.cards-container').style.display = 'none';
+      if (routeSliderContainer) routeSliderContainer.style.display = 'none';
+       if (sliderMarker) {
+            map.removeLayer(sliderMarker);
+            sliderMarker = null;
+        }
+        currentSegmentPointsForSlider = [];
     });
 }
+
+// Keep track of vehicle markers for the slider
+let vehicleMarkers = {};
+
+function updateSliderMarker(index) {
+  if (!currentSegmentPointsForSlider || currentSegmentPointsForSlider.length === 0 || index < 0 || index >= currentSegmentPointsForSlider.length) {
+    if (sliderTimestampSpan) sliderTimestampSpan.textContent = '';
+    // Remove vehicle markers if no data
+    Object.values(vehicleMarkers).forEach(marker => {
+        if (map.hasLayer(marker)) {
+            map.removeLayer(marker);
+        }
+    });
+    vehicleMarkers = {};
+    return;
+  }
+
+  const selectedVehicleID = document.getElementById("vehicleSelect").value;
+
+  if (selectedVehicleID !== "ambos") {
+      // Logic for single vehicle slider (existing logic)
+      const pointData = currentSegmentPointsForSlider[index];
+      const latLng = pointData.latlng;
+
+      if (sliderMarker) {
+        sliderMarker.setLatLng(latLng);
+      } else {
+        sliderMarker = L.circleMarker(latLng, {
+          radius: 8,
+          fillColor: "#FF0000",
+          color: "#FFFFFF",
+          weight: 2,
+          opacity: 1,
+          fillOpacity: 0.9,
+          pane: 'markerPane'
+        }).addTo(map);
+      }
+      sliderMarker.bringToFront();
+
+      if (sliderTimestampSpan) {
+        if (pointData.timestamp) {
+          const originalDate = new Date(pointData.timestamp);
+          const adjustedDate = new Date(originalDate.getTime() + (5 * 60 * 60 * 1000)); // Adjusting for UTC-5
+          sliderTimestampSpan.textContent = adjustedDate.toLocaleString("es-CO", {
+            day: "2-digit",
+            month: "2-digit",
+            year: "2-digit",
+            hour: "2-digit",
+            minute: "2-digit",
+            second: "2-digit",
+          });
+        } else {
+          sliderTimestampSpan.textContent = `Punto ${index + 1}`;
+        }
+      }
+
+      // Hide other vehicle markers if they exist
+       Object.entries(vehicleMarkers).forEach(([id, marker]) => {
+           if (id !== selectedVehicleID && map.hasLayer(marker)) {
+               map.removeLayer(marker);
+           }
+       });
+
+
+  } else { // "ambos" selected
+      // Logic for single slider controlling both vehicles
+      const referencePoint = currentSegmentPointsForSlider[index]; // Use Vehicle 1 data as reference for slider position
+
+      Object.entries(window.vehicleData).forEach(([vehicleId, dataPoints]) => {
+          // Find the closest data point for this vehicle based on the timestamp of the reference point
+          // This assumes timestamps are somewhat synchronized or we can find a close match
+          const closestPoint = dataPoints.reduce((prev, curr) => {
+              const prevTimeDiff = Math.abs(new Date(prev.timestamp) - new Date(referencePoint.timestamp));
+              const currTimeDiff = Math.abs(new Date(curr.timestamp) - new Date(referencePoint.timestamp));
+              return (currTimeDiff < prevTimeDiff) ? curr : prev;
+          });
+
+          const latLng = L.latLng(parseFloat(closestPoint.latitud), parseFloat(closestPoint.longitud));
+
+          if (!vehicleMarkers[vehicleId]) {
+              // Create marker if it doesn't exist
+              const markerColor = vehicleId === "1" ? "#FFD700" : "#000000"; // Match polyline colors
+               vehicleMarkers[vehicleId] = L.circleMarker(latLng, {
+                  radius: 8,
+                  fillColor: markerColor,
+                  color: "#FFFFFF",
+                  weight: 2,
+                  opacity: 1,
+                  fillOpacity: 0.9,
+                  pane: 'markerPane'
+              }).addTo(map);
+          } else {
+              // Update marker position
+              vehicleMarkers[vehicleId].setLatLng(latLng);
+          }
+           vehicleMarkers[vehicleId].bringToFront();
+      });
+
+      // Remove the single slider marker if it exists
+      if (sliderMarker) {
+          map.removeLayer(sliderMarker);
+          sliderMarker = null;
+      }
+
+
+      if (sliderTimestampSpan) {
+           if (referencePoint.timestamp) {
+              const originalDate = new Date(referencePoint.timestamp);
+              const adjustedDate = new Date(originalDate.getTime() + (5 * 60 * 60 * 1000)); // Adjusting for UTC-5
+              sliderTimestampSpan.textContent = adjustedDate.toLocaleString("es-CO", {
+                day: "2-digit",
+                month: "2-digit",
+                year: "2-digit",
+                hour: "2-digit",
+                minute: "2-digit",
+                second: "2-digit",
+              });
+            } else {
+              sliderTimestampSpan.textContent = `Punto ${index + 1}`;
+            }
+      }
+
+       // Update variable cards with data from the reference point (Vehicle 1)
+       if (gasolinaProgressBar) gasolinaProgressBar.update(referencePoint.gasolina);
+       if (velocidadSpeedometer) velocidadSpeedometer.update(referencePoint.velocidad);
+  }
+}
+
 
 async function getConfig() {
   try {
@@ -645,6 +931,15 @@ document.addEventListener("DOMContentLoaded", async () => {
         updateSliderMarker(parseInt(this.value));
       });
     }
+
+    // Initialize variable components on page load
+    if (gasolinaContainer) {
+        gasolinaProgressBar = createProgressBar(gasolinaContainer, 0); // Initialize with 0
+    }
+    if (velocidadContainer) {
+        velocidadSpeedometer = createSpeedometer(velocidadContainer, 0); // Initialize with 0
+    }
+
 
     generarElementosDecorativos();
     startDateTime.addEventListener("input", actualizarRestricciones);

@@ -1,27 +1,9 @@
-document.addEventListener('DOMContentLoaded', function() {
-    // Seleccionar todas las tarjetas con clase 'variable-card'
-    const variableElements = document.querySelectorAll('.variable-card');
+// Function to create and update a speedometer component
+function createSpeedometer(containerElement, initialSpeed = 0) {
+    // Clear the container
+    containerElement.innerHTML = '';
 
-    // Continuar si hay al menos dos tarjetas
-    if (variableElements.length < 2) {
-        // No se muestra ninguna advertencia
-    }
-
-    // Apuntar a la segunda tarjeta (índice 1)
-    const secondVariableCard = variableElements[1];
-    if (!secondVariableCard) {
-        return;
-    }
-
-    const cardContent = secondVariableCard.querySelector('.card-content');
-    if (!cardContent) {
-        return;
-    }
-
-    // Limpiar el contenido existente
-    cardContent.innerHTML = '';
-
-    // --- Creación del SVG para el velocímetro ---
+    // --- Creation of the SVG for the speedometer ---
     const speedometerContainer = document.createElement('div');
     speedometerContainer.className = 'speedometer-container';
 
@@ -129,7 +111,7 @@ document.addEventListener('DOMContentLoaded', function() {
     svg.appendChild(speedValueText);
 
     speedometerContainer.appendChild(svg);
-    cardContent.appendChild(speedometerContainer);
+    containerElement.appendChild(speedometerContainer);
 
     // Añadir estilos CSS dinámicamente
     if (!document.querySelector('style[data-speedometer-styles]')) {
@@ -161,47 +143,8 @@ document.addEventListener('DOMContentLoaded', function() {
         document.head.appendChild(styles);
     }
 
-    // Función para actualizar la apariencia visual del velocímetro
-    function updateSpeedometer(speedValue) {
-        if (typeof speedValue !== 'number' || isNaN(speedValue)) {
-            speedValue = 0;
-        }
-        // Para la aguja, se limita a 100 (maxSpeedometerValue), pero el texto mostrará el valor real
-        const clampedSpeed = Math.max(0, Math.min(maxSpeedometerValue, speedValue));
-        const angle = (clampedSpeed / maxSpeedometerValue) * angleRange;
-        needle.setAttribute("transform", `rotate(${angle}, 100, 100)`);
-        speedValueText.textContent = `${Math.round(speedValue)} km/h`;
-    }
-
-     // --- Llamada a la API y sincronización ---
-    // Endpoint base para el API
-    const apiEndpoint = '/api/coordenadas';
-    async function fetchVelocidad() {
-        try {
-            const vehicleSelect = document.getElementById('vehicleSelect');
-            const vehicleID = vehicleSelect ? vehicleSelect.value : '';
-            // Construir la URL según si hay un VehicleID seleccionado
-            const url = vehicleID ? `${apiEndpoint}?VehicleID=${vehicleID}` : apiEndpoint;
-            const response = await fetch(url);
-            if (!response.ok) {
-                return null;
-            }
-            const data = await response.json();
-            const velocidadValue = parseFloat(data.velocidad);
-            if (typeof velocidadValue === 'number' && !isNaN(velocidadValue) && velocidadValue >= 0) {
-                return velocidadValue;
-            } else if (data && Object.keys(data).length === 0) {
-                return 0;
-            } else {
-                return null;
-            }
-        } catch (error) {
-            return null;
-        }
-    }
-
     let currentSpeed = 0;
-    let targetSpeed = 0;
+    let targetSpeed = initialSpeed;
 
     function animateSpeedometer() {
         const diff = targetSpeed - currentSpeed;
@@ -216,22 +159,26 @@ document.addEventListener('DOMContentLoaded', function() {
         requestAnimationFrame(animateSpeedometer);
     }
 
-    fetchVelocidad().then(speed => {
-        if (speed !== null) {
-            targetSpeed = speed;
-            animateSpeedometer();
-        } else {
-            updateSpeedometer(0);
-            currentSpeed = 0;
-            targetSpeed = 0;
+    // --- Function to update the visual appearance of the speedometer ---
+    function updateSpeedometer(speedValue) {
+        if (typeof speedValue !== 'number' || isNaN(speedValue)) {
+            speedValue = 0;
         }
-    });
+        // For the needle, it is limited to 100 (maxSpeedometerValue), but the text will show the actual value
+        const clampedSpeed = Math.max(0, Math.min(maxSpeedometerValue, speedValue));
+        const angle = (clampedSpeed / maxSpeedometerValue) * angleRange;
+        needle.setAttribute("transform", `rotate(${angle}, 100, 100)`);
+        speedValueText.textContent = `${Math.round(speedValue)} km/h`;
+    }
 
-    setInterval(async () => {
-        const speed = await fetchVelocidad();
-        if (speed !== null) {
+    // Initial animation
+    animateSpeedometer();
+
+    // Return an update function
+    return {
+        update: function(speed) {
             targetSpeed = speed;
             animateSpeedometer();
         }
-    }, 5000);
-});
+    };
+}
