@@ -165,7 +165,7 @@ function consultar() {
   const vehicleSelect = document.getElementById("vehicleSelect");
   const vehicleID = vehicleSelect ? vehicleSelect.value : "1";
 
-  let url = `https://geofind-fe.ddns.net/api/historicos?inicio=${encodeURIComponent(startFormatted)}&fin=${encodeURIComponent(endFormatted)}`;
+  let url = `/api/historicos?inicio=${encodeURIComponent(startFormatted)}&fin=${encodeURIComponent(endFormatted)}`;
   if (vehicleID !== "ambos") {
     url += `&VehicleID=${vehicleID}`;
   }
@@ -601,7 +601,7 @@ async function consultarUbicacionEspecifica() {
   }
   currentSegmentPointsForSlider = [];
 
-  fetch(`https://geofind-fe.ddns.net/api/lugar?latitud=${clickedLat}&longitud=${clickedLng}&radio=${radius}&inicio=${encodeURIComponent(startFormatted)}&fin=${encodeURIComponent(endFormatted)}`)
+  fetch(`/api/lugar?latitud=${clickedLat}&longitud=${clickedLng}&radio=${radius}&inicio=${encodeURIComponent(startFormatted)}&fin=${encodeURIComponent(endFormatted)}`)
     .then((response) => {
       if (!response.ok) {
         response.json().then(err => {
