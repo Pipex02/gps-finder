@@ -19,7 +19,7 @@ jobs:
 
       - name: Copiar variables de entorno
         run: |
-          cp ~/backup/gps-finder/.env-test ${{ github.workspace }}/.env || exit 1
+          cp ~/backup/gps-finder/.env-test ${{ github.workspace }}/api-rest/.env || exit 1
           echo "✅ Variables de entorno copiadas."
 
       - name: Desplegar frontend
@@ -52,7 +52,7 @@ jobs:
 
       - name: Copiar variables de entorno
         run: |
-          cp ~/backup/gps-finder/.env-test ${{ github.workspace }}/.env || exit 1
+          cp ~/backup/gps-finder/.env-test ${{ github.workspace }}/api-rest/.env || exit 1
           echo "✅ Variables de entorno copiadas."
 
       - name: Desplegar frontend
@@ -85,7 +85,7 @@ jobs:
 
       - name: Copiar variables de entorno
         run: |
-          cp ~/backup/gps-finder/.env-test ${{ github.workspace }}/.env || exit 1
+          cp ~/backup/gps-finder/.env-test ${{ github.workspace }}/api-rest/.env || exit 1
           echo "✅ Variables de entorno copiadas."
 
       - name: Desplegar frontend
@@ -118,7 +118,7 @@ jobs:
 
       - name: Copiar variables de entorno
         run: |
-          cp ~/backup/gps-finder/.env-test ${{ github.workspace }}/.env || exit 1
+          cp ~/backup/gps-finder/.env-test ${{ github.workspace }}/api-rest/.env || exit 1
           echo "✅ Variables de entorno copiadas."
 
       - name: Desplegar frontend

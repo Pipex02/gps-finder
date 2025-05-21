@@ -4,7 +4,7 @@ const mysql = require("mysql2");
 const cors = require("cors");
 
 const app = express();
-const PORT = 3000;
+const PORT = process.env.PORT || 3000; // Use environment variable for port, default to 3000
 
 // Configuración de CORS para permitir peticiones desde el frontend
 app.use(cors());
